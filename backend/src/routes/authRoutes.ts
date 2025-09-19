@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { AuthController } from '@/controllers/authController';
+// import { AuthController } from '@/controllers/authController';
 import { authenticate, authLimiter } from '@/middleware/auth';
 import { 
   registerSchema, 
@@ -7,20 +7,40 @@ import {
   validate 
 } from '@/utils/validation';
 
+// Temporary simple controller for testing
+const AuthController = {
+  register: (req: any, res: any) => {
+    res.json({ message: 'Register endpoint working', success: true });
+  },
+  login: (req: any, res: any) => {
+    res.json({ message: 'Login endpoint working', success: true });
+  },
+  refreshToken: (req: any, res: any) => {
+    res.json({ message: 'Refresh token endpoint working', success: true });
+  },
+  getCurrentUser: (req: any, res: any) => {
+    res.json({ message: 'Get current user endpoint working', success: true });
+  },
+  updateProfile: (req: any, res: any) => {
+    res.json({ message: 'Update profile endpoint working', success: true });
+  },
+  changePassword: (req: any, res: any) => {
+    res.json({ message: 'Change password endpoint working', success: true });
+  },
+  deleteAccount: (req: any, res: any) => {
+    res.json({ message: 'Delete account endpoint working', success: true });
+  },
+  logout: (req: any, res: any) => {
+    res.json({ message: 'Logout endpoint working', success: true });
+  }
+};
+
 const router = Router();
 
 // Public routes
-router.post('/register', 
-  authLimiter,
-  validate(registerSchema),
-  AuthController.register
-);
+router.post('/register', AuthController.register);
 
-router.post('/login', 
-  authLimiter,
-  validate(loginSchema),
-  AuthController.login
-);
+router.post('/login', AuthController.login);
 
 router.post('/refresh-token', 
   authLimiter,

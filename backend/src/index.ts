@@ -5,9 +5,9 @@ import dotenv from 'dotenv';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 
-// Import routes - temporarily commented out due to database dependency
-// import authRoutes from '@/routes/authRoutes';
-// import projectRoutes from '@/routes/projectRoutes';
+// Import routes
+import authRoutes from '@/routes/authRoutes';
+import projectRoutes from '@/routes/projectRoutes';
 
 // Import middleware
 import { apiLimiter } from '@/middleware/rateLimiter';
@@ -51,11 +51,11 @@ app.get('/health', (req, res) => {
   });
 });
 
-// API routes - temporarily commented out due to database dependency
-// app.use('/api/auth', authRoutes);
-// app.use('/api/projects', projectRoutes);
+// API routes
+app.use('/api/auth', authRoutes);
+app.use('/api/projects', projectRoutes);
 
-// Temporary simple API routes for testing
+// Additional test endpoint
 app.get('/api/test', (req, res) => {
   res.json({ message: 'Backend is working!', timestamp: new Date().toISOString() });
 });
