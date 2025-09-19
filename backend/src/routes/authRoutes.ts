@@ -1,6 +1,7 @@
 import { Router } from 'express';
 // import { AuthController } from '@/controllers/authController';
-import { authenticate, authLimiter } from '@/middleware/auth';
+import { authenticate } from '@/middleware/auth';
+import { authLimiter } from '@/middleware/rateLimiter';
 import { 
   registerSchema, 
   loginSchema, 
