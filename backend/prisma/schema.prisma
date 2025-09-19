@@ -1,0 +1,156 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  avatarUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  ownedProjects     Project[] @relation("ProjectOwner")
+  projectCollaborations ProjectCollaborator[]
+  translatedSegments Segment[] @relation("SegmentTranslator")
+  reviewedSegments  Segment[] @relation("SegmentReviewer")
+  uploadedFiles     Attachment[]
+
+  @@map("users")
+}
+
+model Project {
+  id              String   @id @default(uuid())
+  name            String
+  description     String?
+  sourceLanguage  String
+  targetLanguage  String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  ownerId String
+  owner   User   @relation("ProjectOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  collaborators ProjectCollaborator[]
+  segments      Segment[]
+  translationMemory TranslationMemory[]
+  glossaries    Glossary[]
+  attachments   Attachment[]
+
+  @@map("projects")
+}
+
+model ProjectCollaborator {
+  id        String   @id @default(uuid())
+  role      String   // 'owner', 'translator', 'reviewer', 'viewer'
+  createdAt DateTime @default(now())
+
+  // Relations
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@map("project_collaborators")
+}
+
+model Segment {
+  id          String   @id @default(uuid())
+  segmentKey  String
+  sourceText  String
+  targetText  String?
+  status      String   @default("new") // 'new', 'in_progress', 'translated', 'reviewed', 'approved'
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  projectId    String
+  project      Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  translatorId String?
+  translator   User?   @relation("SegmentTranslator", fields: [translatorId], references: [id])
+  reviewerId   String?
+  reviewer     User?   @relation("SegmentReviewer", fields: [reviewerId], references: [id])
+
+  aiTranslations AiTranslation[]
+
+  @@unique([projectId, segmentKey])
+  @@map("segments")
+}
+
+model TranslationMemory {
+  id              String   @id @default(uuid())
+  sourceText      String
+  targetText      String
+  sourceLanguage  String
+  targetLanguage  String
+  matchPercentage Int?
+  createdAt       DateTime @default(now())
+
+  // Relations
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, sourceText, sourceLanguage, targetLanguage])
+  @@map("translation_memory")
+}
+
+model Glossary {
+  id           String   @id @default(uuid())
+  term         String
+  definition   String?
+  translation  String?
+  category     String?
+  createdAt    DateTime @default(now())
+
+  // Relations
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, term])
+  @@map("glossaries")
+}
+
+model AiTranslation {
+  id              String   @id @default(uuid())
+  aiProvider      String   // 'openai', 'deepl', 'google', 'azure', 'offline_model'
+  modelName       String?
+  translatedText  String
+  confidenceScore Float?
+  createdAt       DateTime @default(now())
+
+  // Relations
+  segmentId String
+  segment   Segment @relation(fields: [segmentId], references: [id], onDelete: Cascade)
+
+  @@map("ai_translations")
+}
+
+model Attachment {
+  id             String   @id @default(uuid())
+  filename       String
+  originalFilename String
+  fileType       String
+  fileSize       Int
+  filePath       String
+  createdAt      DateTime @default(now())
+
+  // Relations
+  projectId  String
+  project    Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  uploadedBy String
+  uploader   User    @relation(fields: [uploadedBy], references: [id])
+
+  @@map("attachments")
+}
