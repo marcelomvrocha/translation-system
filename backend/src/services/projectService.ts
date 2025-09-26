@@ -47,7 +47,7 @@ export class ProjectService {
     userId: string, 
     options: PaginationOptions & FilterOptions
   ): Promise<PaginatedResponse<Project>> {
-    const { page, limit, search, sortBy = 'createdAt', sortOrder = 'desc' } = options;
+    const { page, limit, search, sortBy = 'createdAt', sortOrder = 'desc', status, sourceLanguage, targetLanguage } = options;
     const skip = (page - 1) * limit;
 
     const where = {
@@ -62,11 +62,18 @@ export class ProjectService {
         }
       ],
       ...(search && {
-        OR: [
-          { name: { contains: search, mode: 'insensitive' as const } },
-          { description: { contains: search, mode: 'insensitive' as const } }
+        AND: [
+          {
+            OR: [
+              { name: { contains: search, mode: 'insensitive' as const } },
+              { description: { contains: search, mode: 'insensitive' as const } }
+            ]
+          }
         ]
-      })
+      }),
+      ...(status && { status }),
+      ...(sourceLanguage && { sourceLanguage }),
+      ...(targetLanguage && { targetLanguage })
     };
 
     const [projects, total] = await Promise.all([
@@ -249,6 +256,12 @@ export class ProjectService {
     email: string, 
     role: string
   ): Promise<ProjectCollaborator> {
+    // Validate role
+    const validRoles = ['translator', 'reviewer', 'viewer'];
+    if (!validRoles.includes(role)) {
+      throw createError('Invalid role. Must be translator, reviewer, or viewer', 400);
+    }
+
     // Check if user is owner
     const project = await prisma.project.findFirst({
       where: {
@@ -268,6 +281,11 @@ export class ProjectService {
 
     if (!user) {
       throw createError('User not found', 404);
+    }
+
+    // Check if user is trying to add themselves
+    if (user.id === ownerId) {
+      throw createError('Cannot add yourself as a collaborator', 400);
     }
 
     // Check if user is already a collaborator

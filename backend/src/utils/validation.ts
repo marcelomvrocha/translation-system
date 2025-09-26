@@ -167,3 +167,33 @@ export const userIdSchema = z.object({
     id: uuidSchema,
   }),
 });
+
+// Collaborator validation
+export const addCollaboratorSchema = z.object({
+  body: z.object({
+    email: z.string().email('Invalid email address'),
+    role: z.enum(['translator', 'reviewer', 'viewer'], {
+      errorMap: () => ({ message: 'Role must be translator, reviewer, or viewer' }),
+    }),
+  }),
+});
+
+export const updateCollaboratorRoleSchema = z.object({
+  body: z.object({
+    role: z.enum(['translator', 'reviewer', 'viewer'], {
+      errorMap: () => ({ message: 'Role must be translator, reviewer, or viewer' }),
+    }),
+  }),
+});
+
+// Project search validation
+export const projectSearchSchema = z.object({
+  query: z.object({
+    page: z.string().regex(/^\d+$/).transform(Number).default('1'),
+    limit: z.string().regex(/^\d+$/).transform(Number).default('10'),
+    search: z.string().optional(),
+    status: z.enum(['active', 'in_progress', 'completed', 'archived']).optional(),
+    sourceLanguage: z.string().length(2).optional(),
+    targetLanguage: z.string().length(2).optional(),
+  }),
+});
