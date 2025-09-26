@@ -108,11 +108,22 @@ const ColumnIdentificationDialog: React.FC<ColumnIdentificationDialogProps> = ({
         // Auto-advance to configuration step
         setActiveStep(1);
       } else {
-        setError(result.error || 'Failed to detect columns');
+        // Show specific error messages for common issues
+        let errorMessage = result.error || 'Failed to detect columns';
+        
+        if (errorMessage.includes('merged cells')) {
+          errorMessage = 'This Excel file contains merged cells in the header row, which is not supported. Please unmerge the cells in row 1 and try again.';
+        } else if (errorMessage.includes('No data found')) {
+          errorMessage = 'No data found in the file. Please ensure the file contains data and the first row has column headers.';
+        } else if (errorMessage.includes('File not found')) {
+          errorMessage = 'File not found. Please try uploading the file again.';
+        }
+        
+        setError(errorMessage);
       }
     } catch (error) {
-      setError('Failed to detect columns');
       console.error('Error detecting columns:', error);
+      setError('Failed to detect columns. Please check your internet connection and try again.');
     } finally {
       setLoading(false);
     }

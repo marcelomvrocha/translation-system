@@ -79,7 +79,26 @@ export class ColumnDetectionService {
       throw new Error(`Sheet '${targetSheet}' not found`);
     }
 
+    // Check for merged cells
+    if (worksheet['!merges'] && worksheet['!merges'].length > 0) {
+      throw new Error('This Excel file contains merged cells in the header row, which is not supported. Please unmerge the cells in row 1 and try again.');
+    }
+
     const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+    
+    // Additional validation for merged cells
+    if (jsonData.length > 0) {
+      const firstRow = jsonData[0];
+      const hasEmptyCells = firstRow.some((cell, index) => {
+        // Check if there are gaps in the first row (indicating merged cells)
+        return cell === undefined && index < firstRow.length - 1;
+      });
+      
+      if (hasEmptyCells) {
+        throw new Error('This Excel file appears to have merged cells in the header row, which is not supported. Please unmerge the cells in row 1 and try again.');
+      }
+    }
+
     return this.processDataToColumns(jsonData, maxSampleRows);
   }
 
@@ -139,12 +158,21 @@ export class ColumnDetectionService {
 
     const maxRows = Math.min(data.length, maxSampleRows + 1);
     const sampleData = data.slice(0, maxRows);
-    const maxColumns = Math.max(...sampleData.map(row => row.length));
+    
+    // Find the maximum number of columns, but handle empty rows
+    const maxColumns = Math.max(...sampleData.map(row => row ? row.length : 0));
+    
+    if (maxColumns === 0) {
+      throw new Error('No data found in the file. Please ensure the file contains data and the first row has column headers.');
+    }
 
     const columns: ColumnInfo[] = [];
 
     for (let colIndex = 0; colIndex < maxColumns; colIndex++) {
-      const columnData = sampleData.map(row => row[colIndex]).filter(cell => cell !== undefined);
+      const columnData = sampleData
+        .map(row => row ? row[colIndex] : undefined)
+        .filter(cell => cell !== undefined && cell !== null && cell !== '');
+      
       const sampleValues = columnData.slice(0, 5); // First 5 values as samples
       
       const analysis = this.analyzeColumnData(columnData);
