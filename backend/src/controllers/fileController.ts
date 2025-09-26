@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { handleAsync } from '@/utils/errorHandler';
 import { ApiResponse } from '@/types';
+import { FileParserService } from '@/services/fileParserService';
 import fs from 'fs';
 import path from 'path';
 
@@ -193,6 +194,60 @@ export class FileController {
     const response: ApiResponse = {
       success: true,
       message: 'File deleted successfully'
+    };
+
+    res.status(200).json(response);
+  });
+
+  static parseProjectFiles = handleAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const { projectId } = req.params;
+    const userId = req.user!.id;
+
+    // Verify project access
+    const project = await prisma.project.findFirst({
+      where: {
+        id: projectId,
+        OR: [
+          { ownerId: userId },
+          { collaborators: { some: { userId } } }
+        ]
+      }
+    });
+
+    if (!project) {
+      return res.status(404).json({
+        success: false,
+        error: 'Project not found or access denied'
+      });
+    }
+
+    try {
+      const result = await FileParserService.parseProjectFiles(projectId);
+      
+      const response: ApiResponse = {
+        success: true,
+        data: result,
+        message: `Parsed ${result.parsed} segments from project files`
+      };
+
+      res.status(200).json(response);
+    } catch (error) {
+      const response: ApiResponse = {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to parse files'
+      };
+
+      res.status(500).json(response);
+    }
+  });
+
+  static getSupportedFileTypes = handleAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const supportedTypes = FileParserService.getSupportedFileTypes();
+    
+    const response: ApiResponse = {
+      success: true,
+      data: supportedTypes,
+      message: 'Supported file types retrieved successfully'
     };
 
     res.status(200).json(response);

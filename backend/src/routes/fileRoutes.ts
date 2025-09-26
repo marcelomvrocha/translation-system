@@ -37,4 +37,13 @@ router.delete('/:fileId',
   FileController.deleteFile
 );
 
+// File parsing routes
+router.post('/parse/:projectId',
+  FileController.parseProjectFiles
+);
+
+router.get('/supported-types',
+  FileController.getSupportedFileTypes
+);
+
 export default router;

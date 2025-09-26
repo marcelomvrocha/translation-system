@@ -70,6 +70,16 @@ export const updateSegmentSchema = z.object({
   }),
 });
 
+export const bulkUpdateSegmentsSchema = z.object({
+  body: z.object({
+    segments: z.array(z.object({
+      id: z.string().uuid('Invalid segment ID'),
+      targetText: z.string().optional(),
+      status: z.enum(['new', 'in_progress', 'translated', 'reviewed', 'approved']).optional(),
+    })).min(1, 'At least one segment is required'),
+  }),
+});
+
 export const createCollaboratorSchema = z.object({
   body: z.object({
     email: z.string().email('Invalid email address'),

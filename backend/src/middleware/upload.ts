@@ -28,13 +28,33 @@ const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCa
     'application/pdf',
     'text/csv',
     'application/vnd.ms-excel',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.apple.numbers', // Apple Numbers files
+    'application/zip', // Numbers files are often detected as ZIP
+    'application/x-iwork-numbers', // Alternative MIME type for Numbers
+    'application/octet-stream' // Fallback for unknown types
   ];
 
-  if (allowedTypes.includes(file.mimetype)) {
+  const allowedExtensions = [
+    '.txt', '.json', '.xml', '.csv', '.pdf', 
+    '.xlsx', '.xls', '.docx', '.odt',
+    '.numbers' // Apple Numbers files
+  ];
+
+  const fileExtension = path.extname(file.originalname).toLowerCase();
+  const isAllowedMimeType = allowedTypes.includes(file.mimetype);
+  const isAllowedExtension = allowedExtensions.includes(fileExtension);
+
+  // Allow if either MIME type or extension is allowed
+  if (isAllowedMimeType || isAllowedExtension) {
     cb(null, true);
   } else {
-    cb(createError('Invalid file type. Only text, JSON, XML, CSV, PDF, and Office documents are allowed.', 400));
+    console.log('File rejected:', { 
+      filename: file.originalname, 
+      mimetype: file.mimetype, 
+      extension: fileExtension 
+    });
+    cb(createError('Invalid file type. Only text, JSON, XML, CSV, PDF, Office documents, and Numbers files are allowed.', 400));
   }
 };
 
