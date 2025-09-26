@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Frontend Auth</title>
+</head>
+<body>
+    <h1>Frontend Authentication Debug</h1>
+    <div id="output"></div>
+    
+    <script>
+        function debugAuth() {
+            const output = document.getElementById('output');
+            
+            // Check localStorage
+            const accessToken = localStorage.getItem('accessToken');
+            const refreshToken = localStorage.getItem('refreshToken');
+            
+            output.innerHTML = `
+                <h2>LocalStorage Contents:</h2>
+                <p><strong>Access Token:</strong> ${accessToken ? 'Present' : 'Missing'}</p>
+                <p><strong>Refresh Token:</strong> ${refreshToken ? 'Present' : 'Missing'}</p>
+                
+                <h2>Token Details:</h2>
+                <p><strong>Access Token:</strong> ${accessToken || 'None'}</p>
+                <p><strong>Refresh Token:</strong> ${refreshToken || 'None'}</p>
+                
+                <h2>Test API Call:</h2>
+                <button onclick="testAPI()">Test Segments API</button>
+                <div id="apiResult"></div>
+            `;
+        }
+        
+        async function testAPI() {
+            const token = localStorage.getItem('accessToken');
+            const apiResult = document.getElementById('apiResult');
+            
+            if (!token) {
+                apiResult.innerHTML = '<p style="color: red;">No access token found!</p>';
+                return;
+            }
+            
+            try {
+                const response = await fetch('http://localhost:5001/api/segments/project/94774b27-7447-46c2-b783-0e7fe3bc1a1b?page=1&limit=1000', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const result = await response.json();
+                apiResult.innerHTML = `
+                    <p><strong>Status:</strong> ${response.status}</p>
+                    <p><strong>Success:</strong> ${result.success}</p>
+                    <p><strong>Segments Count:</strong> ${result.data ? result.data.length : 0}</p>
+                    <pre>${JSON.stringify(result, null, 2)}</pre>
+                `;
+            } catch (error) {
+                apiResult.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        }
+        
+        // Run debug on load
+        debugAuth();
+    </script>
+</body>
+</html>

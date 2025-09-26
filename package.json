@@ -26,11 +26,11 @@
     "postinstall": "husky install"
   },
   "devDependencies": {
+    "@commitlint/cli": "^18.4.3",
+    "@commitlint/config-conventional": "^18.4.3",
     "concurrently": "^8.2.2",
     "husky": "^8.0.3",
-    "lint-staged": "^15.2.0",
-    "@commitlint/cli": "^18.4.3",
-    "@commitlint/config-conventional": "^18.4.3"
+    "lint-staged": "^15.2.0"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
@@ -42,7 +42,9 @@
     ]
   },
   "commitlint": {
-    "extends": ["@commitlint/config-conventional"]
+    "extends": [
+      "@commitlint/config-conventional"
+    ]
   },
   "engines": {
     "node": ">=18.0.0",
@@ -67,5 +69,8 @@
   "bugs": {
     "url": "https://github.com/your-username/translation-system/issues"
   },
-  "homepage": "https://github.com/your-username/translation-system#readme"
+  "homepage": "https://github.com/your-username/translation-system#readme",
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  }
 }

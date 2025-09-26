@@ -182,9 +182,29 @@ const TranslationInterfacePage: React.FC = () => {
   }, [projectId]);
 
   useEffect(() => {
+    console.log('TranslationInterfacePage: useEffect triggered');
+    console.log('Project ID:', projectId);
+    console.log('User:', user);
     loadSegments();
     loadStats();
   }, [loadSegments, loadStats]);
+
+  // Add debugging for segments state changes
+  useEffect(() => {
+    console.log('TranslationInterfacePage: segments state changed');
+    console.log('Segments count:', segments.length);
+    console.log('Segments data:', segments);
+  }, [segments]);
+
+  // Add debugging for loading state changes
+  useEffect(() => {
+    console.log('TranslationInterfacePage: loading state changed to:', loading);
+  }, [loading]);
+
+  // Add debugging for error state changes
+  useEffect(() => {
+    console.log('TranslationInterfacePage: error state changed to:', error);
+  }, [error]);
 
   // Grid column definitions
   const columnDefs: ColDef[] = useMemo(() => [
@@ -286,6 +306,10 @@ const TranslationInterfacePage: React.FC = () => {
 
   // Grid event handlers
   const onGridReady = (params: GridReadyEvent) => {
+    console.log('TranslationInterfacePage: AG-Grid ready');
+    console.log('Grid API:', params.api);
+    console.log('Column API:', params.columnApi);
+    console.log('Row Data at grid ready:', segments);
     setGridApi(params.api);
     setColumnApi(params.columnApi);
   };
@@ -522,6 +546,15 @@ const TranslationInterfacePage: React.FC = () => {
             rowSelection="multiple"
             suppressRowClickSelection={true}
             animateRows={true}
+            onFirstDataRendered={(params) => {
+              console.log('TranslationInterfacePage: AG-Grid first data rendered');
+              console.log('Row count:', params.api.getDisplayedRowCount());
+              console.log('Row data:', segments);
+            }}
+            onModelUpdated={(params) => {
+              console.log('TranslationInterfacePage: AG-Grid model updated');
+              console.log('Row count:', params.api.getDisplayedRowCount());
+            }}
             defaultColDef={{
               resizable: true,
               sortable: true,
