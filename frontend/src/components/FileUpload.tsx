@@ -253,7 +253,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
           Drop files here or click to browse
         </Typography>
         <Typography variant="body2" color="text.secondary" paragraph>
-          Supported formats: TXT, JSON, XML, PDF, CSV, Excel, Numbers
+          Supported formats: TXT, JSON, XML, PDF, CSV, Excel (.xlsx, .xls), Numbers (.numbers)
         </Typography>
         <Typography variant="caption" color="text.secondary">
           Max {maxFiles} files, {maxSize}MB each

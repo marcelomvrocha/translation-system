@@ -1,6 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import { PrismaClient } from '@prisma/client';
+import * as XLSX from 'xlsx';
+import * as yauzl from 'yauzl';
 
 const prisma = new PrismaClient();
 
@@ -31,13 +33,18 @@ export class FileParserService {
         case 'text/csv':
           segments.push(...this.parseCsvFile(fileContent));
           break;
+        case 'application/vnd.ms-excel':
+        case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
+          segments.push(...this.parseExcelFile(filePath));
+          break;
         case 'application/vnd.apple.numbers':
         case 'application/zip':
         case 'application/x-iwork-numbers':
         case 'application/octet-stream':
           // Check if it's a Numbers file by extension or content
           if (filePath.endsWith('.numbers') || this.isNumbersFile(fileContent)) {
-            segments.push(...this.parseNumbersFile(fileContent));
+            const numbersSegments = await this.parseNumbersFile(filePath);
+            segments.push(...numbersSegments);
           } else {
             throw new Error(`Unsupported file type: ${fileType}`);
           }
@@ -144,7 +151,7 @@ export class FileParserService {
         segments.push({
           segmentKey: `csv_row_${i}`,
           sourceText: columns[sourceColumnIndex],
-          targetText: targetColumnIndex >= 0 ? columns[targetColumnIndex] : undefined
+          targetText: targetColumnIndex >= 0 ? columns[targetColumnIndex] || null : null
         });
       }
     }
@@ -152,64 +159,145 @@ export class FileParserService {
     return segments;
   }
 
-  private static parseNumbersFile(content: string): ParsedSegment[] {
+  private static parseExcelFile(filePath: string): ParsedSegment[] {
     const segments: ParsedSegment[] = [];
     
     try {
-      // Numbers files are actually ZIP archives containing XML
-      // For now, we'll try to extract text content from the XML structure
-      // This is a simplified parser - in production, you might want to use a proper Numbers parser
-      
-      // Look for text content in the XML structure
-      const textRegex = /<t[^>]*>([^<]+)<\/t>/g;
-      let match;
-      let index = 1;
+      const workbook = XLSX.readFile(filePath);
+      let segmentIndex = 1;
 
-      while ((match = textRegex.exec(content)) !== null) {
-        const text = match[1].trim();
-        if (text.length > 0 && !text.match(/^\d+$/) && text.length > 2) {
-          // Skip pure numbers and very short text
-          segments.push({
-            segmentKey: `numbers_cell_${index}`,
-            sourceText: text
+      // Process each worksheet
+      workbook.SheetNames.forEach(sheetName => {
+        const worksheet = workbook.Sheets[sheetName];
+        if (!worksheet) return;
+        
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+
+        // Find columns that might contain translatable text
+        const textColumns: number[] = [];
+        if (jsonData.length > 0) {
+          const firstRow = jsonData[0] as any[];
+          firstRow.forEach((cell, index) => {
+            if (typeof cell === 'string' && 
+                (cell.toLowerCase().includes('text') || 
+                 cell.toLowerCase().includes('content') ||
+                 cell.toLowerCase().includes('message') ||
+                 cell.toLowerCase().includes('description'))) {
+              textColumns.push(index);
+            }
           });
-          index++;
         }
-      }
 
-      // If no text found with the above method, try a more general approach
-      if (segments.length === 0) {
-        const generalTextRegex = />([^<>{}\[\]]{3,})</g;
-        let generalMatch;
-        let generalIndex = 1;
-
-        while ((generalMatch = generalTextRegex.exec(content)) !== null) {
-          const text = generalMatch[1].trim();
-          if (text.length > 0 && !text.match(/^\d+$/) && !text.match(/^[A-Z_]+$/)) {
-            segments.push({
-              segmentKey: `numbers_content_${generalIndex}`,
-              sourceText: text
-            });
-            generalIndex++;
+        // If no specific text columns found, use all columns
+        if (textColumns.length === 0) {
+          for (let i = 0; i < (jsonData[0] as any[]).length; i++) {
+            textColumns.push(i);
           }
         }
-      }
-    } catch (error) {
-      console.error('Error parsing Numbers file:', error);
-      // Fallback: treat as plain text
-      const lines = content.split('\n').filter(line => line.trim().length > 0);
-      lines.forEach((line, index) => {
-        const text = line.trim();
-        if (text.length > 0) {
-          segments.push({
-            segmentKey: `numbers_line_${index + 1}`,
-            sourceText: text
+
+        // Extract text from each row
+        jsonData.forEach((row: any[], rowIndex) => {
+          if (rowIndex === 0) return; // Skip header row
+          
+          textColumns.forEach(colIndex => {
+            const cellValue = row[colIndex];
+            if (cellValue && typeof cellValue === 'string' && cellValue.trim().length > 0) {
+              segments.push({
+                segmentKey: `excel_${sheetName}_row${rowIndex}_col${colIndex}`,
+                sourceText: cellValue.trim()
+              });
+              segmentIndex++;
+            }
           });
-        }
+        });
       });
+    } catch (error) {
+      console.error('Error parsing Excel file:', error);
+      throw new Error(`Failed to parse Excel file: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
 
     return segments;
+  }
+
+  private static async parseNumbersFile(filePath: string): Promise<ParsedSegment[]> {
+    const segments: ParsedSegment[] = [];
+    
+    return new Promise((resolve) => {
+      yauzl.open(filePath, { lazyEntries: true }, (err, zipfile) => {
+        if (err) {
+          console.error('Error opening Numbers file:', err);
+          resolve([]);
+          return;
+        }
+
+        if (!zipfile) {
+          resolve([]);
+          return;
+        }
+
+        let segmentIndex = 1;
+        let processedEntries = 0;
+        const totalEntries = zipfile.entryCount;
+
+        zipfile.readEntry();
+        zipfile.on('entry', (entry) => {
+          if (/\.xml$/.test(entry.fileName)) {
+            zipfile.openReadStream(entry, (err, readStream) => {
+              if (err) {
+                console.error('Error reading Numbers file entry:', err);
+                processedEntries++;
+                if (processedEntries === totalEntries) {
+                  resolve(segments);
+                } else {
+                  zipfile.readEntry();
+                }
+                return;
+              }
+
+              let xmlContent = '';
+              readStream.on('data', (chunk) => {
+                xmlContent += chunk.toString();
+              });
+
+              readStream.on('end', () => {
+                // Extract text content from XML
+                const textRegex = /<t[^>]*>([^<]+)<\/t>/g;
+                let match;
+
+                while ((match = textRegex.exec(xmlContent)) !== null) {
+                  const text = match[1].trim();
+                  if (text.length > 0 && !text.match(/^\d+$/) && text.length > 2) {
+                    segments.push({
+                      segmentKey: `numbers_${segmentIndex}`,
+                      sourceText: text
+                    });
+                    segmentIndex++;
+                  }
+                }
+
+                processedEntries++;
+                if (processedEntries === totalEntries) {
+                  resolve(segments);
+                } else {
+                  zipfile.readEntry();
+                }
+              });
+            });
+          } else {
+            processedEntries++;
+            if (processedEntries === totalEntries) {
+              resolve(segments);
+            } else {
+              zipfile.readEntry();
+            }
+          }
+        });
+
+        zipfile.on('end', () => {
+          resolve(segments);
+        });
+      });
+    });
   }
 
   private static isNumbersFile(content: string): boolean {
@@ -242,7 +330,7 @@ export class FileParserService {
         data: newSegments.map(segment => ({
           segmentKey: segment.segmentKey,
           sourceText: segment.sourceText,
-          targetText: segment.targetText,
+          targetText: segment.targetText || null,
           projectId,
           status: segment.targetText ? 'translated' : 'new'
         }))
@@ -279,6 +367,8 @@ export class FileParserService {
       'application/xml',
       'text/xml',
       'text/csv',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'application/vnd.apple.numbers',
       'application/zip',
       'application/x-iwork-numbers',
