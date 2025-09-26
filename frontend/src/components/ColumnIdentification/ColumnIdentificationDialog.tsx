@@ -73,7 +73,7 @@ const ColumnIdentificationDialog: React.FC<ColumnIdentificationDialogProps> = ({
 
   const loadPresets = async () => {
     try {
-      const response = await fetch('/api/column-identification/presets', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/column-identification/presets`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
         }
@@ -92,7 +92,7 @@ const ColumnIdentificationDialog: React.FC<ColumnIdentificationDialogProps> = ({
     setError(null);
     
     try {
-      const response = await fetch(`/api/column-identification/files/${fileId}/columns?maxSampleRows=10`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/column-identification/files/${fileId}/columns?maxSampleRows=10`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
         }
@@ -158,7 +158,7 @@ const ColumnIdentificationDialog: React.FC<ColumnIdentificationDialogProps> = ({
 
     try {
       // Save configuration
-      const saveResponse = await fetch(`/api/column-identification/projects/${projectId}/files/${fileId}/column-config`, {
+      const saveResponse = await fetch(`${import.meta.env.VITE_API_URL}/column-identification/projects/${projectId}/files/${fileId}/column-config`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -174,7 +174,7 @@ const ColumnIdentificationDialog: React.FC<ColumnIdentificationDialogProps> = ({
       }
 
       // Parse with configuration
-      const parseResponse = await fetch(`/api/column-identification/projects/${projectId}/files/${fileId}/parse-with-config`, {
+      const parseResponse = await fetch(`${import.meta.env.VITE_API_URL}/column-identification/projects/${projectId}/files/${fileId}/parse-with-config`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
