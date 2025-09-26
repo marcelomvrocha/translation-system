@@ -260,11 +260,20 @@ POST   /api/ai/offline-setup
 - [ ] Build terminology suggestion system
 - [ ] Add glossary validation and consistency checks
 
-#### Week 7: File Processing
-- [ ] Implement file parsing (XLIFF, JSON, CSV, etc.)
-- [ ] Create automatic segment extraction
-- [ ] Build file export functionality
-- [ ] Add file format validation
+#### Week 7: File Processing & Column Identification ✅ COMPLETED
+- [x] Implement file parsing (XLIFF, JSON, CSV, Excel, Numbers, etc.)
+- [x] Create automatic segment extraction
+- [x] Build file export functionality
+- [x] Add file format validation
+- [x] **NEW: Column Identification System** - Similar to MemoQ's Multilingual Delimited Text Filter
+  - [x] Automatic column detection and analysis
+  - [x] Smart column type suggestions with confidence scoring
+  - [x] Interactive column mapping interface
+  - [x] Built-in presets (Common, Translation Memory, Glossary)
+  - [x] Support for Excel (.xlsx, .xls), CSV, and Numbers (.numbers) files
+  - [x] Language code detection and assignment
+  - [x] Real-time data preview during configuration
+  - [x] 3-step wizard interface for easy setup
 
 #### Week 8: Quality Assurance
 - [ ] Implement translation status workflow

@@ -10,6 +10,7 @@ A modern, collaborative translation management system with AI integration capabi
 - **🤖 AI Integration** - Both online and offline AI tools for translation assistance
 - **💾 Translation Memory Management** - Import/export TMX and other TM formats
 - **📚 Glossary Management** - Import/export terminology databases
+- **🔍 Column Identification** - Smart file parsing similar to MemoQ's Multilingual Delimited Text Filter
 - **🔒 Privacy-focused** - Support for offline AI models for complete data privacy
 
 ## 🚀 Quick Start
@@ -23,9 +24,9 @@ A modern, collaborative translation management system with AI integration capabi
 - Redis 6+ (optional for now)
 - Docker & Docker Compose (optional)
 
-### Current Status: Week 3 Complete ✅
+### Current Status: Week 7 Complete ✅
 
-**The application is currently running with a complete translation interface!**
+**The application now includes advanced Column Identification capabilities!**
 
 - **Backend**: `http://localhost:5001` ✅ Running
 - **Frontend**: `http://localhost:3000` ✅ Running  
@@ -42,6 +43,9 @@ A modern, collaborative translation management system with AI integration capabi
 - **Authentication**: ✅ JWT tokens working
 - **Project Management**: ✅ Full CRUD operations
 - **Collaboration**: ✅ Role-based access control
+- **Column Identification**: ✅ Advanced file parsing system
+- **Multi-format Support**: ✅ Excel, CSV, Numbers files
+- **Smart Detection**: ✅ AI-powered column analysis
 
 ### Test Credentials
 - **Admin**: `admin@example.com` / `password123`
@@ -99,6 +103,51 @@ DELETE /api/segments/:segmentId (delete segment)
 PUT /api/segments/project/:projectId/bulk (bulk update)
 GET /api/segments/project/:projectId/stats (get statistics)
 ```
+
+### 🔍 Column Identification System
+
+The system now includes an advanced **Column Identification** feature similar to MemoQ's Multilingual Delimited Text Filter, allowing intelligent parsing of structured files.
+
+#### **Supported File Formats**
+- **Excel**: `.xlsx`, `.xls` files
+- **CSV**: Comma-separated values
+- **Numbers**: Apple Numbers `.numbers` files
+
+#### **Key Features**
+- **🤖 Smart Detection**: AI-powered column type analysis with confidence scoring
+- **🎯 Interactive Mapping**: Drag-and-drop column configuration interface
+- **📋 Built-in Presets**: Common, Translation Memory, and Glossary templates
+- **🌍 Language Detection**: Automatic language code assignment
+- **👁️ Real-time Preview**: Live data preview during configuration
+- **⚡ 3-Step Wizard**: Easy setup process
+
+#### **Column Types Supported**
+- **Source Text**: Original text to be translated
+- **Target Text**: Translated text
+- **Context**: Additional context information
+- **Notes**: Translator notes or comments
+- **Status**: Translation status tracking
+- **Key/ID**: Unique identifiers
+- **Skip**: Columns to ignore
+
+#### **API Endpoints**
+```
+GET    /api/column-identification/files/:fileId/columns
+POST   /api/column-identification/projects/:projectId/files/:fileId/column-config
+GET    /api/column-identification/projects/:projectId/files/:fileId/column-config
+POST   /api/column-identification/projects/:projectId/files/:fileId/parse-with-config
+GET    /api/column-identification/presets
+DELETE /api/column-identification/projects/:projectId/column-configs/:configurationId
+```
+
+#### **How to Use**
+1. Upload Excel/CSV/Numbers files to a project
+2. Click "Column Identification" button in project details
+3. Follow the 3-step wizard:
+   - **Step 1**: Review detected columns and confidence scores
+   - **Step 2**: Map columns to translation purposes
+   - **Step 3**: Review configuration and parse file
+4. System creates translation segments based on your configuration
 
 ### Development Workflow
 

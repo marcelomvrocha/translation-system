@@ -70,11 +70,22 @@ npm run dev
 - **Upload files**:
   - Drag and drop files onto the upload area
   - Or click to browse and select files
-  - Supported formats: TXT, JSON, XML, PDF, CSV, Excel, Numbers
+  - Supported formats: TXT, JSON, XML, PDF, CSV, Excel (.xlsx, .xls), Numbers (.numbers)
 - **Parse files for translation**:
   - Click "Parse Files" button after uploading
   - Automatically extracts translatable content
   - Creates segments for translation
+
+#### **🔍 Column Identification (NEW!)**
+- **For structured files** (Excel, CSV, Numbers):
+  - Click "Column Identification" button after uploading
+  - Follow the 3-step wizard:
+    1. **Review detected columns** with confidence scores
+    2. **Map columns** to translation purposes (source, target, context, etc.)
+    3. **Parse with configuration** to create segments
+  - **Built-in presets** available for quick setup
+  - **Smart detection** automatically suggests column types
+  - **Real-time preview** shows data during configuration
 - **Manage files**:
   - Download files by clicking the download icon
   - Delete files using the delete button

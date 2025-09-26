@@ -7,6 +7,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Column Identification System - 2025-09-26
+
+#### Added
+- **Advanced Column Identification Feature**
+  - Similar to MemoQ's Multilingual Delimited Text Filter
+  - 3-step wizard interface for easy configuration
+  - Smart column detection with AI-powered analysis
+  - Confidence scoring for column type suggestions
+  - Interactive column mapping with drag-and-drop support
+  - Real-time data preview during configuration
+
+- **Multi-format File Support**
+  - Excel files (.xlsx, .xls) with intelligent column detection
+  - CSV files with automatic delimiter detection
+  - Apple Numbers files (.numbers) with ZIP-based parsing
+  - Support for multiple sheets in Excel files
+
+- **Built-in Configuration Presets**
+  - Common Translation preset (source/target/context)
+  - Translation Memory preset (key/source/target/context)
+  - Glossary preset (term/definition/translation)
+  - Custom preset support for advanced users
+
+- **Column Type Detection**
+  - Source Text columns with language detection
+  - Target Text columns with language assignment
+  - Context columns for additional information
+  - Notes columns for translator comments
+  - Status columns for translation tracking
+  - Key/ID columns for unique identifiers
+  - Skip option for irrelevant columns
+
+- **Backend Infrastructure**
+  - ColumnConfiguration and ColumnMapping database models
+  - ColumnDetectionService for intelligent analysis
+  - ColumnConfigurationService for mapping management
+  - Complete REST API for column identification workflow
+  - Database migrations for new schema
+
+- **Frontend Components**
+  - ColumnIdentificationDialog with step-by-step wizard
+  - ColumnPreview component with confidence visualization
+  - ColumnConfigurationTable for interactive mapping
+  - PresetSelector for quick configuration setup
+  - Integration with ProjectDetailPage
+
+#### API Endpoints
+- `GET /api/column-identification/files/:fileId/columns` - Detect columns
+- `POST /api/column-identification/projects/:projectId/files/:fileId/column-config` - Save configuration
+- `GET /api/column-identification/projects/:projectId/files/:fileId/column-config` - Get configuration
+- `POST /api/column-identification/projects/:projectId/files/:fileId/parse-with-config` - Parse with config
+- `GET /api/column-identification/presets` - Get available presets
+- `DELETE /api/column-identification/projects/:projectId/column-configs/:configurationId` - Delete config
+
 ### Numbers File Upload Fix - 2025-09-26
 
 #### Added
