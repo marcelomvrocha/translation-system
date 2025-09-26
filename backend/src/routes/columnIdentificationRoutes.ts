@@ -1,13 +1,13 @@
 import { Router } from 'express';
 import { ColumnIdentificationController } from '@/controllers/columnIdentificationController';
-import { authenticateToken } from '@/middleware/auth';
-import { validateRequest } from '@/utils/validation';
+import { authenticate } from '@/middleware/auth';
+import { validate } from '@/utils/validation';
 import { z } from 'zod';
 
 const router = Router();
 
 // Apply authentication to all routes
-router.use(authenticateToken);
+router.use(authenticate);
 
 // Validation schemas
 const detectColumnsSchema = z.object({
@@ -67,25 +67,25 @@ const deleteConfigurationSchema = z.object({
 // Routes
 router.get(
   '/files/:fileId/columns',
-  validateRequest(detectColumnsSchema),
+  validate(detectColumnsSchema),
   ColumnIdentificationController.detectColumns
 );
 
 router.post(
   '/projects/:projectId/files/:fileId/column-config',
-  validateRequest(saveConfigurationSchema),
+  validate(saveConfigurationSchema),
   ColumnIdentificationController.saveConfiguration
 );
 
 router.get(
   '/projects/:projectId/files/:fileId/column-config',
-  validateRequest(getConfigurationSchema),
+  validate(getConfigurationSchema),
   ColumnIdentificationController.getConfiguration
 );
 
 router.post(
   '/projects/:projectId/files/:fileId/parse-with-config',
-  validateRequest(parseWithConfigurationSchema),
+  validate(parseWithConfigurationSchema),
   ColumnIdentificationController.parseWithConfiguration
 );
 
@@ -96,7 +96,7 @@ router.get(
 
 router.delete(
   '/projects/:projectId/column-configs/:configurationId',
-  validateRequest(deleteConfigurationSchema),
+  validate(deleteConfigurationSchema),
   ColumnIdentificationController.deleteConfiguration
 );
 
