@@ -3,14 +3,18 @@ import { Request, Response } from 'express';
 
 // General API rate limiter
 export const apiLimiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'), // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '1000'), // Increased for development
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '60000'), // 1 minute for development
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '10000'), // Very high limit for development
   message: {
     success: false,
     error: 'Too many requests from this IP, please try again later.',
   },
   standardHeaders: true,
   legacyHeaders: false,
+  // Skip rate limiting in development
+  skip: (req) => {
+    return process.env.NODE_ENV === 'development';
+  },
 });
 
 // Strict rate limiter for authentication endpoints
