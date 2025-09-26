@@ -34,12 +34,15 @@ import {
   Language as LanguageIcon,
   Upload as UploadIcon,
   Folder as FolderIcon,
-  Translate as TranslateIcon
+  Translate as TranslateIcon,
+  Settings as SettingsIcon
 } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/hooks/redux';
 import { getProjectById, updateProject, deleteProject } from '@/store/slices/projectSlice';
 import FileUpload from '@/components/FileUpload';
+import ColumnIdentificationDialog from '@/components/ColumnIdentification/ColumnIdentificationDialog';
+import { ColumnConfiguration } from '@/types/columnIdentification';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -86,6 +89,8 @@ const ProjectDetailPage: React.FC = () => {
   const [files, setFiles] = useState<any[]>([]);
   const [loadingFiles, setLoadingFiles] = useState(false);
   const [parsingFiles, setParsingFiles] = useState(false);
+  const [columnIdentificationOpen, setColumnIdentificationOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<{ id: string; name: string; type: string } | null>(null);
 
   const languages = [
     { code: 'en', name: 'English' },
@@ -421,6 +426,40 @@ const ProjectDetailPage: React.FC = () => {
               >
                 View Segments
               </Button>
+              <Button
+                variant="outlined"
+                color="primary"
+                startIcon={<SettingsIcon />}
+                onClick={() => {
+                  // Find the first Excel/CSV file for column identification
+                  const excelFile = files.find(f => 
+                    f.fileType.includes('excel') || 
+                    f.fileType.includes('spreadsheet') || 
+                    f.fileType === 'text/csv' ||
+                    f.originalFilename.endsWith('.xlsx') ||
+                    f.originalFilename.endsWith('.xls') ||
+                    f.originalFilename.endsWith('.csv')
+                  );
+                  
+                  if (excelFile) {
+                    setSelectedFile({
+                      id: excelFile.id,
+                      name: excelFile.originalFilename,
+                      type: excelFile.fileType
+                    });
+                    setColumnIdentificationOpen(true);
+                  } else {
+                    setSnackbar({
+                      open: true,
+                      message: 'No Excel or CSV files found for column identification',
+                      severity: 'error'
+                    });
+                  }
+                }}
+                disabled={files.length === 0}
+              >
+                Column Identification
+              </Button>
             </Box>
           </Box>
 
@@ -606,6 +645,30 @@ const ProjectDetailPage: React.FC = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      {/* Column Identification Dialog */}
+      {selectedFile && (
+        <ColumnIdentificationDialog
+          open={columnIdentificationOpen}
+          onClose={() => {
+            setColumnIdentificationOpen(false);
+            setSelectedFile(null);
+          }}
+          fileId={selectedFile.id}
+          fileName={selectedFile.name}
+          fileType={selectedFile.type}
+          projectId={projectId!}
+          onConfigurationComplete={(config: ColumnConfiguration) => {
+            setSnackbar({
+              open: true,
+              message: `Column configuration saved and file parsed successfully! ${config.mappings.length} columns mapped.`,
+              severity: 'success'
+            });
+            // Refresh files list
+            loadFiles();
+          }}
+        />
+      )}
     </Box>
   );
 };
