@@ -47,7 +47,7 @@ export class FileController {
         originalFilename: req.file.originalname,
         fileType: req.file.mimetype,
         fileSize: req.file.size,
-        filePath: req.file.path,
+        filePath: path.resolve(req.file.path), // Convert to absolute path
         projectId,
         uploadedBy: userId
       },
