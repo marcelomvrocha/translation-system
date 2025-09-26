@@ -182,7 +182,12 @@ export class FileParserService {
                 (cell.toLowerCase().includes('text') || 
                  cell.toLowerCase().includes('content') ||
                  cell.toLowerCase().includes('message') ||
-                 cell.toLowerCase().includes('description'))) {
+                 cell.toLowerCase().includes('description') ||
+                 cell.toLowerCase().includes('english') ||
+                 cell.toLowerCase().includes('spanish') ||
+                 cell.toLowerCase().includes('translation') ||
+                 cell.toLowerCase().includes('source') ||
+                 cell.toLowerCase().includes('target'))) {
               textColumns.push(index);
             }
           });
@@ -197,9 +202,23 @@ export class FileParserService {
 
         // Extract text from each row
         jsonData.forEach((row: any[], rowIndex) => {
-          if (rowIndex === 0) return; // Skip header row
+          if (!Array.isArray(row)) return;
           
-          textColumns.forEach(colIndex => {
+          // Check if first row looks like headers (contains common header words)
+          const isHeaderRow = rowIndex === 0 && row.some(cell => 
+            typeof cell === 'string' && 
+            (cell.toLowerCase().includes('english') || 
+             cell.toLowerCase().includes('spanish') ||
+             cell.toLowerCase().includes('text') ||
+             cell.toLowerCase().includes('translation'))
+          );
+          
+          if (isHeaderRow) return; // Skip header row
+          
+          // Extract text from all columns or just the identified text columns
+          const columnsToProcess = textColumns.length > 0 ? textColumns : Array.from({length: row.length}, (_, i) => i);
+          
+          columnsToProcess.forEach(colIndex => {
             const cellValue = row[colIndex];
             if (cellValue && typeof cellValue === 'string' && cellValue.trim().length > 0) {
               segments.push({
@@ -241,7 +260,7 @@ export class FileParserService {
 
         zipfile.readEntry();
         zipfile.on('entry', (entry) => {
-          if (/\.xml$/.test(entry.fileName)) {
+          if (/\.(xml|iwa)$/.test(entry.fileName)) {
             zipfile.openReadStream(entry, (err, readStream) => {
               if (err) {
                 console.error('Error reading Numbers file entry:', err);
@@ -260,18 +279,47 @@ export class FileParserService {
               });
 
               readStream.on('end', () => {
-                // Extract text content from XML
-                const textRegex = /<t[^>]*>([^<]+)<\/t>/g;
-                let match;
-
-                while ((match = textRegex.exec(xmlContent)) !== null) {
-                  const text = match[1].trim();
-                  if (text.length > 0 && !text.match(/^\d+$/) && text.length > 2) {
-                    segments.push({
-                      segmentKey: `numbers_${segmentIndex}`,
-                      sourceText: text
-                    });
-                    segmentIndex++;
+                // Extract text content from Numbers files
+                // Try multiple patterns for different file types
+                const patterns = [
+                  /<t[^>]*>([^<]+)<\/t>/g,  // XML text tags
+                  /"([^"]{3,})"/g,          // Quoted strings
+                  /'([^']{3,})'/g,          // Single quoted strings
+                  /([A-Za-z][A-Za-z0-9\s.,!?;:'"-]{2,})/g  // General text patterns
+                ];
+                
+                let foundText = false;
+                patterns.forEach(pattern => {
+                  let match;
+                  while ((match = pattern.exec(xmlContent)) !== null) {
+                    const text = match[1] ? match[1].trim() : match[0].trim();
+                    if (text.length > 2 && 
+                        !text.match(/^\d+$/) && 
+                        !text.match(/^[A-Z_]+$/) &&
+                        !text.match(/^[a-z]+$/)) {
+                      segments.push({
+                        segmentKey: `numbers_${segmentIndex}`,
+                        sourceText: text
+                      });
+                      segmentIndex++;
+                      foundText = true;
+                    }
+                  }
+                });
+                
+                // If no text found with patterns, try a more general approach
+                if (!foundText && xmlContent.length > 100) {
+                  const generalTextRegex = /[A-Za-z][A-Za-z0-9\s.,!?;:'"-]{2,}/g;
+                  let generalMatch;
+                  while ((generalMatch = generalTextRegex.exec(xmlContent)) !== null) {
+                    const text = generalMatch[0].trim();
+                    if (text.length > 2 && !text.match(/^\d+$/) && !text.match(/^[A-Z_]+$/)) {
+                      segments.push({
+                        segmentKey: `numbers_${segmentIndex}`,
+                        sourceText: text
+                      });
+                      segmentIndex++;
+                    }
                   }
                 }
 
