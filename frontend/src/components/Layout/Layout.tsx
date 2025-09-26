@@ -143,11 +143,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           flexGrow: 1,
           p: 3,
           width: { sm: `calc(100% - ${sidebarOpen ? DRAWER_WIDTH : 0}px)` },
-          height: '100vh',
-          maxHeight: '100vh',
-          overflow: 'auto',
-          overflowY: 'auto',
-          overflowX: 'hidden',
+          minHeight: '100vh',
+          overflow: 'visible',
           transition: (theme) =>
             theme.transitions.create(['width', 'margin'], {
               easing: theme.transitions.easing.sharp,
