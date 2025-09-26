@@ -118,7 +118,7 @@ const TranslationInterfacePage: React.FC = () => {
         ...(statusFilter !== 'all' && { status: statusFilter })
       });
 
-      const response = await fetch(`/api/segments/project/${projectId}?${params}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/segments/project/${projectId}?${params}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
         }
@@ -142,7 +142,7 @@ const TranslationInterfacePage: React.FC = () => {
     if (!projectId) return;
     
     try {
-      const response = await fetch(`/api/segments/project/${projectId}/stats`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/segments/project/${projectId}/stats`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
         }
@@ -276,7 +276,7 @@ const TranslationInterfacePage: React.FC = () => {
   const onCellValueChanged = async (params: any) => {
     if (params.colDef.field === 'targetText') {
       try {
-        const response = await fetch(`/api/segments/${params.data.id}`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/segments/${params.data.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -304,7 +304,7 @@ const TranslationInterfacePage: React.FC = () => {
     if (selectedSegments.length === 0) return;
 
     try {
-      const response = await fetch(`/api/segments/project/${projectId}/bulk`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/segments/project/${projectId}/bulk`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
