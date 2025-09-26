@@ -1,0 +1,538 @@
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import {
+  Box,
+  Typography,
+  Button,
+  TextField,
+  Chip,
+  Grid,
+  Card,
+  CardContent,
+  IconButton,
+  Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Alert,
+  Snackbar,
+  LinearProgress,
+  Paper,
+  Tabs,
+  Tab
+} from '@mui/material';
+import {
+  Search as SearchIcon,
+  FilterList as FilterIcon,
+  Save as SaveIcon,
+  Refresh as RefreshIcon,
+  Download as DownloadIcon,
+  Upload as UploadIcon,
+  Translate as TranslateIcon,
+  CheckCircle as CheckIcon,
+  Pending as PendingIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon
+} from '@mui/icons-material';
+import { AgGridReact } from 'ag-grid-react';
+import { ColDef, GridReadyEvent, GridApi, ColumnApi } from 'ag-grid-community';
+import 'ag-grid-community/styles/ag-grid.css';
+import 'ag-grid-community/styles/ag-theme-alpine.css';
+import { useParams } from 'react-router-dom';
+import { useAppDispatch, useAppSelector } from '@/hooks/redux';
+
+interface Segment {
+  id: string;
+  segmentKey: string;
+  sourceText: string;
+  targetText?: string;
+  status: 'new' | 'in_progress' | 'translated' | 'reviewed' | 'approved';
+  translator?: {
+    id: string;
+    name: string;
+    email: string;
+    avatarUrl?: string;
+  };
+  reviewer?: {
+    id: string;
+    name: string;
+    email: string;
+    avatarUrl?: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
+
+function TabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props;
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`translation-tabpanel-${index}`}
+      aria-labelledby={`translation-tab-${index}`}
+      {...other}
+    >
+      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+    </div>
+  );
+}
+
+const TranslationInterfacePage: React.FC = () => {
+  const { projectId } = useParams<{ projectId: string }>();
+  const dispatch = useAppDispatch();
+  const { user } = useAppSelector((state) => state.auth);
+
+  const [segments, setSegments] = useState<Segment[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [tabValue, setTabValue] = useState(0);
+  const [selectedSegments, setSelectedSegments] = useState<Segment[]>([]);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
+  const [stats, setStats] = useState<any>(null);
+  const [gridApi, setGridApi] = useState<GridApi | null>(null);
+  const [columnApi, setColumnApi] = useState<ColumnApi | null>(null);
+
+  // Load segments
+  const loadSegments = useCallback(async () => {
+    if (!projectId) return;
+    
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: '1',
+        limit: '1000',
+        ...(searchTerm && { search: searchTerm }),
+        ...(statusFilter !== 'all' && { status: statusFilter })
+      });
+
+      const response = await fetch(`/api/segments/project/${projectId}?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+        }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setSegments(result.data);
+      } else {
+        setError('Failed to load segments');
+      }
+    } catch (err) {
+      setError('Failed to load segments');
+    } finally {
+      setLoading(false);
+    }
+  }, [projectId, searchTerm, statusFilter]);
+
+  // Load statistics
+  const loadStats = useCallback(async () => {
+    if (!projectId) return;
+    
+    try {
+      const response = await fetch(`/api/segments/project/${projectId}/stats`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+        }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setStats(result.data);
+      }
+    } catch (err) {
+      console.error('Failed to load stats:', err);
+    }
+  }, [projectId]);
+
+  useEffect(() => {
+    loadSegments();
+    loadStats();
+  }, [loadSegments, loadStats]);
+
+  // Grid column definitions
+  const columnDefs: ColDef[] = useMemo(() => [
+    {
+      headerName: 'Key',
+      field: 'segmentKey',
+      width: 200,
+      pinned: 'left',
+      checkboxSelection: true,
+      headerCheckboxSelection: true,
+    },
+    {
+      headerName: 'Source Text',
+      field: 'sourceText',
+      width: 300,
+      cellRenderer: (params: any) => (
+        <div style={{ 
+          whiteSpace: 'pre-wrap', 
+          wordBreak: 'break-word',
+          padding: '8px 0'
+        }}>
+          {params.value}
+        </div>
+      ),
+    },
+    {
+      headerName: 'Target Text',
+      field: 'targetText',
+      width: 300,
+      editable: true,
+      cellEditor: 'agLargeTextCellEditor',
+      cellEditorParams: {
+        maxLength: 2000,
+        rows: 4,
+      },
+      cellRenderer: (params: any) => (
+        <div style={{ 
+          whiteSpace: 'pre-wrap', 
+          wordBreak: 'break-word',
+          padding: '8px 0',
+          minHeight: '40px'
+        }}>
+          {params.value || ''}
+        </div>
+      ),
+    },
+    {
+      headerName: 'Status',
+      field: 'status',
+      width: 120,
+      cellRenderer: (params: any) => {
+        const status = params.value;
+        const colors: Record<string, string> = {
+          new: 'default',
+          in_progress: 'warning',
+          translated: 'info',
+          reviewed: 'success',
+          approved: 'success'
+        };
+        return (
+          <Chip
+            label={status.replace('_', ' ').toUpperCase()}
+            color={colors[status] as any}
+            size="small"
+            variant="outlined"
+          />
+        );
+      },
+    },
+    {
+      headerName: 'Translator',
+      field: 'translator.name',
+      width: 150,
+      cellRenderer: (params: any) => {
+        const translator = params.data.translator;
+        return translator ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {translator.avatarUrl && (
+              <img
+                src={translator.avatarUrl}
+                alt={translator.name}
+                style={{ width: 24, height: 24, borderRadius: '50%' }}
+              />
+            )}
+            <span>{translator.name}</span>
+          </div>
+        ) : '-';
+      },
+    },
+    {
+      headerName: 'Updated',
+      field: 'updatedAt',
+      width: 150,
+      cellRenderer: (params: any) => {
+        return new Date(params.value).toLocaleDateString();
+      },
+    },
+  ], []);
+
+  // Grid event handlers
+  const onGridReady = (params: GridReadyEvent) => {
+    setGridApi(params.api);
+    setColumnApi(params.columnApi);
+  };
+
+  const onSelectionChanged = () => {
+    if (gridApi) {
+      const selectedRows = gridApi.getSelectedRows();
+      setSelectedSegments(selectedRows);
+    }
+  };
+
+  const onCellValueChanged = async (params: any) => {
+    if (params.colDef.field === 'targetText') {
+      try {
+        const response = await fetch(`/api/segments/${params.data.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+          },
+          body: JSON.stringify({
+            targetText: params.newValue
+          })
+        });
+
+        if (response.ok) {
+          setSnackbar({ open: true, message: 'Translation saved', severity: 'success' });
+          loadSegments();
+        } else {
+          setSnackbar({ open: true, message: 'Failed to save translation', severity: 'error' });
+        }
+      } catch (err) {
+        setSnackbar({ open: true, message: 'Failed to save translation', severity: 'error' });
+      }
+    }
+  };
+
+  // Bulk operations
+  const handleBulkUpdate = async (status: string) => {
+    if (selectedSegments.length === 0) return;
+
+    try {
+      const response = await fetch(`/api/segments/project/${projectId}/bulk`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+        },
+        body: JSON.stringify({
+          segments: selectedSegments.map(segment => ({
+            id: segment.id,
+            status
+          }))
+        })
+      });
+
+      if (response.ok) {
+        setSnackbar({ open: true, message: 'Segments updated successfully', severity: 'success' });
+        loadSegments();
+        loadStats();
+      } else {
+        setSnackbar({ open: true, message: 'Failed to update segments', severity: 'error' });
+      }
+    } catch (err) {
+      setSnackbar({ open: true, message: 'Failed to update segments', severity: 'error' });
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'approved': return <CheckIcon color="success" />;
+      case 'reviewed': return <CheckIcon color="info" />;
+      case 'translated': return <TranslateIcon color="primary" />;
+      case 'in_progress': return <EditIcon color="warning" />;
+      default: return <PendingIcon color="disabled" />;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'approved': return 'success';
+      case 'reviewed': return 'info';
+      case 'translated': return 'primary';
+      case 'in_progress': return 'warning';
+      default: return 'default';
+    }
+  };
+
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <Box>
+          <LinearProgress sx={{ mb: 2 }} />
+          <Typography>Loading segments...</Typography>
+        </Box>
+      </Box>
+    );
+  }
+
+  return (
+    <Box sx={{ p: 3 }}>
+      {/* Header */}
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+        <Typography variant="h4" component="h1">
+          Translation Interface
+        </Typography>
+        <Box display="flex" gap={2}>
+          <Button
+            variant="outlined"
+            startIcon={<RefreshIcon />}
+            onClick={loadSegments}
+          >
+            Refresh
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<DownloadIcon />}
+            disabled={segments.length === 0}
+          >
+            Export
+          </Button>
+        </Box>
+      </Box>
+
+      {/* Statistics */}
+      {stats && (
+        <Grid container spacing={2} sx={{ mb: 3 }}>
+          <Grid item xs={12} sm={6} md={3}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" color="primary">
+                  {stats.total}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Total Segments
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          {Object.entries(stats.byStatus).map(([status, count]) => (
+            <Grid item xs={12} sm={6} md={3} key={status}>
+              <Card>
+                <CardContent>
+                  <Box display="flex" alignItems="center" gap={1}>
+                    {getStatusIcon(status)}
+                    <Typography variant="h6">
+                      {count as number}
+                    </Typography>
+                  </Box>
+                  <Typography variant="body2" color="text.secondary">
+                    {status.replace('_', ' ').toUpperCase()}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      )}
+
+      {/* Filters */}
+      <Paper sx={{ p: 2, mb: 3 }}>
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={12} sm={6} md={4}>
+            <TextField
+              fullWidth
+              placeholder="Search segments..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              InputProps={{
+                startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />
+              }}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <FormControl fullWidth>
+              <InputLabel>Status</InputLabel>
+              <Select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                label="Status"
+              >
+                <MenuItem value="all">All Status</MenuItem>
+                <MenuItem value="new">New</MenuItem>
+                <MenuItem value="in_progress">In Progress</MenuItem>
+                <MenuItem value="translated">Translated</MenuItem>
+                <MenuItem value="reviewed">Reviewed</MenuItem>
+                <MenuItem value="approved">Approved</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} sm={12} md={5}>
+            <Box display="flex" gap={1} flexWrap="wrap">
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => handleBulkUpdate('translated')}
+                disabled={selectedSegments.length === 0}
+              >
+                Mark as Translated
+              </Button>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => handleBulkUpdate('reviewed')}
+                disabled={selectedSegments.length === 0}
+              >
+                Mark as Reviewed
+              </Button>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => handleBulkUpdate('approved')}
+                disabled={selectedSegments.length === 0}
+              >
+                Mark as Approved
+              </Button>
+            </Box>
+          </Grid>
+        </Grid>
+      </Paper>
+
+      {/* Translation Grid */}
+      <Paper sx={{ height: '70vh' }}>
+        <div
+          className="ag-theme-alpine"
+          style={{ height: '100%', width: '100%' }}
+        >
+          <AgGridReact
+            columnDefs={columnDefs}
+            rowData={segments}
+            onGridReady={onGridReady}
+            onSelectionChanged={onSelectionChanged}
+            onCellValueChanged={onCellValueChanged}
+            rowSelection="multiple"
+            suppressRowClickSelection={true}
+            animateRows={true}
+            defaultColDef={{
+              resizable: true,
+              sortable: true,
+              filter: true,
+            }}
+            getRowId={(params) => params.data.id}
+          />
+        </div>
+      </Paper>
+
+      {/* Selection Info */}
+      {selectedSegments.length > 0 && (
+        <Box mt={2}>
+          <Typography variant="body2" color="text.secondary">
+            {selectedSegments.length} segment(s) selected
+          </Typography>
+        </Box>
+      )}
+
+      {/* Snackbar */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+      >
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </Box>
+  );
+};
+
+export default TranslationInterfacePage;

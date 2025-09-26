@@ -143,6 +143,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           flexGrow: 1,
           p: 3,
           width: { sm: `calc(100% - ${sidebarOpen ? DRAWER_WIDTH : 0}px)` },
+          height: '100vh',
+          maxHeight: '100vh',
+          overflow: 'auto',
+          overflowY: 'auto',
+          overflowX: 'hidden',
           transition: (theme) =>
             theme.transitions.create(['width', 'margin'], {
               easing: theme.transitions.easing.sharp,
@@ -151,7 +156,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         }}
       >
         <Toolbar />
-        {children}
+        <Box sx={{ minHeight: 'calc(100vh - 64px)' }}>
+          {children}
+        </Box>
       </Box>
     </Box>
   );

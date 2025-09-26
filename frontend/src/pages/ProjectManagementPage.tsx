@@ -28,13 +28,15 @@ import {
   FileUpload as FileUploadIcon,
   Language as LanguageIcon
 } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/hooks/redux';
 import { getProjects, createProject, updateProject, deleteProject } from '@/store/slices/projectSlice';
 import { Project } from '@/types';
 
 const ProjectManagementPage: React.FC = () => {
+  const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { projects, loading, error } = useAppSelector((state) => state.projects);
+  const { projects, loading, error } = useAppSelector((state) => state.project);
   const { user } = useAppSelector((state) => state.auth);
 
   const [openDialog, setOpenDialog] = useState(false);
@@ -167,7 +169,18 @@ const ProjectManagementPage: React.FC = () => {
       <Grid container spacing={3}>
         {projects.map((project) => (
           <Grid item xs={12} md={6} lg={4} key={project.id}>
-            <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <Card 
+              sx={{ 
+                height: '100%', 
+                display: 'flex', 
+                flexDirection: 'column',
+                cursor: 'pointer',
+                '&:hover': {
+                  boxShadow: 4
+                }
+              }}
+              onClick={() => navigate(`/projects/${project.id}`)}
+            >
               <CardContent sx={{ flexGrow: 1 }}>
                 <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
                   <Typography variant="h6" component="h2" noWrap>
@@ -231,6 +244,7 @@ const ProjectManagementPage: React.FC = () => {
                   startIcon={<ViewIcon />}
                   fullWidth
                   sx={{ mb: 1 }}
+                  onClick={() => navigate(`/projects/${project.id}`)}
                 >
                   View Project
                 </Button>
@@ -238,6 +252,7 @@ const ProjectManagementPage: React.FC = () => {
                   variant="outlined"
                   startIcon={<FileUploadIcon />}
                   fullWidth
+                  onClick={() => navigate(`/projects/${project.id}`)}
                 >
                   Upload Files
                 </Button>

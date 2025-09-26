@@ -14,6 +14,7 @@ import DashboardPage from '@/pages/DashboardPage';
 import ProjectPage from '@/pages/ProjectPage';
 import ProjectManagementPage from '@/pages/ProjectManagementPage';
 import ProjectDetailPage from '@/pages/ProjectDetailPage';
+import TranslationInterfacePage from '@/pages/TranslationInterfacePage';
 import ProfilePage from '@/pages/ProfilePage';
 
 // Components
@@ -127,11 +128,11 @@ const AppContent: React.FC = () => {
             }
           />
           <Route
-            path="/projects"
+            path="/projects/:id/translate"
             element={
               <ProtectedRoute>
                 <Layout>
-                  <ProjectManagementPage />
+                  <TranslationInterfacePage />
                 </Layout>
               </ProtectedRoute>
             }
@@ -142,6 +143,16 @@ const AppContent: React.FC = () => {
               <ProtectedRoute>
                 <Layout>
                   <ProjectDetailPage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/projects"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <ProjectManagementPage />
                 </Layout>
               </ProtectedRoute>
             }

@@ -33,7 +33,8 @@ import {
   People as PeopleIcon,
   Language as LanguageIcon,
   Upload as UploadIcon,
-  Folder as FolderIcon
+  Folder as FolderIcon,
+  Translate as TranslateIcon
 } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '@/hooks/redux';
@@ -67,10 +68,10 @@ function TabPanel(props: TabPanelProps) {
 }
 
 const ProjectDetailPage: React.FC = () => {
-  const { projectId } = useParams<{ projectId: string }>();
+  const { id: projectId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { currentProject, loading, error } = useAppSelector((state) => state.projects);
+  const { currentProject, loading, error } = useAppSelector((state) => state.project);
   const { user } = useAppSelector((state) => state.auth);
 
   const [tabValue, setTabValue] = useState(0);
@@ -84,6 +85,7 @@ const ProjectDetailPage: React.FC = () => {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
   const [files, setFiles] = useState<any[]>([]);
   const [loadingFiles, setLoadingFiles] = useState(false);
+  const [parsingFiles, setParsingFiles] = useState(false);
 
   const languages = [
     { code: 'en', name: 'English' },
@@ -118,7 +120,7 @@ const ProjectDetailPage: React.FC = () => {
       
       if (response.ok) {
         const result = await response.json();
-        setFiles(result.data);
+        setFiles(Array.isArray(result.data) ? result.data : []);
       }
     } catch (error) {
       console.error('Failed to load files:', error);
@@ -186,6 +188,35 @@ const ProjectDetailPage: React.FC = () => {
       }
     } catch (error) {
       setSnackbar({ open: true, message: 'Failed to download file', severity: 'error' });
+    }
+  };
+
+  const handleParseFiles = async () => {
+    if (!projectId) return;
+    
+    setParsingFiles(true);
+    try {
+      const response = await fetch(`/api/files/parse/${projectId}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+        }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setSnackbar({ 
+          open: true, 
+          message: `Parsed ${result.data.parsed} segments from files`, 
+          severity: 'success' 
+        });
+      } else {
+        setSnackbar({ open: true, message: 'Failed to parse files', severity: 'error' });
+      }
+    } catch (error) {
+      setSnackbar({ open: true, message: 'Failed to parse files', severity: 'error' });
+    } finally {
+      setParsingFiles(false);
     }
   };
 
@@ -263,6 +294,14 @@ const ProjectDetailPage: React.FC = () => {
               </Typography>
             </Box>
             <Box>
+              <Button
+                variant="contained"
+                startIcon={<TranslateIcon />}
+                onClick={() => navigate(`/projects/${currentProject.id}/translate`)}
+                sx={{ mr: 1 }}
+              >
+                Translate
+              </Button>
               <IconButton onClick={handleEditProject} sx={{ mr: 1 }}>
                 <EditIcon />
               </IconButton>
@@ -356,20 +395,32 @@ const ProjectDetailPage: React.FC = () => {
             <Typography variant="h6">
               Project Files
             </Typography>
-            <Button
-              variant="contained"
-              startIcon={<UploadIcon />}
-              onClick={() => setTabValue(1)}
-            >
-              Upload Files
-            </Button>
+            <Box display="flex" gap={2}>
+              <Button
+                variant="outlined"
+                startIcon={<UploadIcon />}
+                onClick={() => setTabValue(1)}
+              >
+                Upload Files
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={<TranslateIcon />}
+                onClick={handleParseFiles}
+                disabled={parsingFiles || files.length === 0}
+              >
+                {parsingFiles ? 'Parsing...' : 'Parse Files'}
+              </Button>
+            </Box>
           </Box>
 
           <FileUpload
             projectId={projectId!}
             onUploadComplete={(uploadedFiles) => {
-              setFiles(prev => [...prev, ...uploadedFiles]);
-              setSnackbar({ open: true, message: 'Files uploaded successfully', severity: 'success' });
+              if (Array.isArray(uploadedFiles)) {
+                setFiles(prev => [...prev, ...uploadedFiles]);
+                setSnackbar({ open: true, message: 'Files uploaded successfully', severity: 'success' });
+              }
             }}
           />
 

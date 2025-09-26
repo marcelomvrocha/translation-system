@@ -50,7 +50,11 @@ const FileUpload: React.FC<FileUploadProps> = ({
     'application/pdf',
     'text/csv',
     'application/vnd.ms-excel',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.apple.numbers',
+    'application/zip',
+    'application/x-iwork-numbers',
+    'application/octet-stream'
   ]
 }) => {
   const [files, setFiles] = useState<UploadFile[]>([]);
@@ -69,9 +73,22 @@ const FileUpload: React.FC<FileUploadProps> = ({
     if (file.size > maxSize * 1024 * 1024) {
       return `File size must be less than ${maxSize}MB`;
     }
-    if (!acceptedTypes.includes(file.type)) {
+    
+    // Check both MIME type and file extension
+    const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
+    const allowedExtensions = ['.txt', '.json', '.xml', '.csv', '.pdf', '.xlsx', '.xls', '.docx', '.odt', '.numbers'];
+    const isAllowedMimeType = acceptedTypes.includes(file.type);
+    const isAllowedExtension = allowedExtensions.includes(fileExtension);
+    
+    if (!isAllowedMimeType && !isAllowedExtension) {
+      console.log('File rejected by frontend:', { 
+        filename: file.name, 
+        mimetype: file.type, 
+        extension: fileExtension 
+      });
       return 'File type not supported';
     }
+    
     return null;
   };
 
@@ -81,6 +98,14 @@ const FileUpload: React.FC<FileUploadProps> = ({
     const newFiles: UploadFile[] = [];
     
     Array.from(selectedFiles).forEach((file) => {
+      // Debug logging for file detection
+      console.log('File selected:', {
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        lastModified: file.lastModified
+      });
+      
       const error = validateFile(file);
       if (error) {
         newFiles.push({
@@ -155,7 +180,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
           : f
       ));
 
-      onUploadComplete?.(result.data);
+      onUploadComplete?.([result.data]);
     } catch (error) {
       setFiles(prev => prev.map(f => 
         f.id === uploadFile.id 
@@ -228,7 +253,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
           Drop files here or click to browse
         </Typography>
         <Typography variant="body2" color="text.secondary" paragraph>
-          Supported formats: TXT, JSON, XML, PDF, CSV, Excel
+          Supported formats: TXT, JSON, XML, PDF, CSV, Excel, Numbers
         </Typography>
         <Typography variant="caption" color="text.secondary">
           Max {maxFiles} files, {maxSize}MB each
