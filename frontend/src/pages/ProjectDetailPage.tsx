@@ -207,9 +207,11 @@ const ProjectDetailPage: React.FC = () => {
         const result = await response.json();
         setSnackbar({ 
           open: true, 
-          message: `Parsed ${result.data.parsed} segments from files`, 
+          message: `Parsed ${result.data.parsed} segments from files! Click "Translate" to view them.`, 
           severity: 'success' 
         });
+        // Refresh the files list to show updated content
+        fetchProjectFiles(projectId);
       } else {
         setSnackbar({ open: true, message: 'Failed to parse files', severity: 'error' });
       }
@@ -411,15 +413,60 @@ const ProjectDetailPage: React.FC = () => {
               >
                 {parsingFiles ? 'Parsing...' : 'Parse Files'}
               </Button>
+              <Button
+                variant="contained"
+                color="secondary"
+                startIcon={<TranslateIcon />}
+                onClick={() => navigate(`/projects/${projectId}/translate`)}
+              >
+                View Segments
+              </Button>
             </Box>
           </Box>
 
           <FileUpload
             projectId={projectId!}
-            onUploadComplete={(uploadedFiles) => {
+            onUploadComplete={async (uploadedFiles) => {
               if (Array.isArray(uploadedFiles)) {
                 setFiles(prev => [...prev, ...uploadedFiles]);
                 setSnackbar({ open: true, message: 'Files uploaded successfully', severity: 'success' });
+                
+                // Automatically parse the uploaded files
+                try {
+                  setParsingFiles(true);
+                  const response = await fetch(`/api/files/parse/${projectId}`, {
+                    method: 'POST',
+                    headers: {
+                      'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+                    }
+                  });
+                  
+                  if (response.ok) {
+                    const result = await response.json();
+                    setSnackbar({ 
+                      open: true, 
+                      message: `Files uploaded and parsed successfully! ${result.data.parsed} segments created.`, 
+                      severity: 'success' 
+                    });
+                    // Refresh the files list to show updated content
+                    fetchProjectFiles(projectId!);
+                  } else {
+                    setSnackbar({ 
+                      open: true, 
+                      message: 'Files uploaded but parsing failed. You can parse them manually.', 
+                      severity: 'warning' 
+                    });
+                  }
+                } catch (error) {
+                  console.error('Error parsing files:', error);
+                  setSnackbar({ 
+                    open: true, 
+                    message: 'Files uploaded but parsing failed. You can parse them manually.', 
+                    severity: 'warning' 
+                  });
+                } finally {
+                  setParsingFiles(false);
+                }
               }
             }}
           />
