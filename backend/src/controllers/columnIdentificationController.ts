@@ -47,6 +47,13 @@ export class ColumnIdentificationController {
     }
 
     try {
+      console.log('Column detection request for file:', { 
+        fileId, 
+        filePath: file.filePath, 
+        fileType: file.fileType, 
+        sheetName: sheetName as string 
+      });
+      
       // Detect columns
       const columns = await ColumnDetectionService.detectColumns(
         file.filePath,

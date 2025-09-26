@@ -12,6 +12,13 @@ export class ColumnDetectionService {
    */
   static async detectColumns(filePath: string, fileType: string, sheetName?: string, maxSampleRows: number = 10): Promise<ColumnInfo[]> {
     try {
+      console.log('ColumnDetectionService.detectColumns called with:', { filePath, fileType, sheetName, maxSampleRows });
+      
+      // Check if file exists
+      if (!fs.existsSync(filePath)) {
+        throw new Error(`File not found: ${filePath}`);
+      }
+      
       let columns: ColumnInfo[] = [];
 
       switch (fileType) {
