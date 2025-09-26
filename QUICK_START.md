@@ -53,13 +53,28 @@ npm run dev
   - View project information and collaborators
   - Upload files using drag-and-drop
 
-#### **📤 File Upload**
+#### **🌐 Translation Interface**
+- **Access Translation Interface**:
+  - Go to any project details page
+  - Click "Translate" button
+  - Or navigate to `/projects/{id}/translate`
+- **Translate Segments**:
+  - Edit translations directly in the grid
+  - Use auto-save functionality
+  - Filter and search segments
+  - Use bulk operations for multiple segments
+
+#### **📤 File Upload & Parsing**
 - **Go to any project** (click on project card)
 - **Switch to "Files" tab**
 - **Upload files**:
   - Drag and drop files onto the upload area
   - Or click to browse and select files
-  - Supported formats: TXT, JSON, XML, PDF, CSV, Excel
+  - Supported formats: TXT, JSON, XML, PDF, CSV, Excel, Numbers
+- **Parse files for translation**:
+  - Click "Parse Files" button after uploading
+  - Automatically extracts translatable content
+  - Creates segments for translation
 - **Manage files**:
   - Download files by clicking the download icon
   - Delete files using the delete button
@@ -68,6 +83,14 @@ npm run dev
 - **View collaborators** in the "Collaborators" tab
 - **See user roles** (Owner, Translator, Reviewer)
 - **Project access** is controlled by roles
+
+#### **🔄 Complete Translation Workflow**
+1. **Create Project**: Set up project with source and target languages
+2. **Upload Files**: Upload source files (TXT, JSON, XML, CSV)
+3. **Parse Files**: Extract translatable content automatically
+4. **Translate**: Use the AG-Grid interface for translation
+5. **Review**: Mark segments for review and approval
+6. **Export**: Export completed translations
 
 ### **Step 4: Test API Endpoints**
 
@@ -87,6 +110,28 @@ curl -X POST http://localhost:5001/api/auth/login \
 ```bash
 # First get a token from login, then:
 curl -X GET http://localhost:5001/api/projects \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE"
+```
+
+#### **Segment Management Test**
+```bash
+# Get project segments
+curl -X GET http://localhost:5001/api/segments/project/project-1 \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE"
+
+# Get segment statistics
+curl -X GET http://localhost:5001/api/segments/project/project-1/stats \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE"
+```
+
+#### **File Parsing Test**
+```bash
+# Parse project files
+curl -X POST http://localhost:5001/api/files/parse/project-1 \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE"
+
+# Get supported file types
+curl -X GET http://localhost:5001/api/files/supported-types \
   -H "Authorization: Bearer YOUR_TOKEN_HERE"
 ```
 
