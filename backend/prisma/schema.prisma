@@ -47,6 +47,7 @@ model Project {
   translationMemory TranslationMemory[]
   glossaries    Glossary[]
   attachments   Attachment[]
+  columnConfigurations ColumnConfiguration[]
 
   @@map("projects")
 }
@@ -152,5 +153,44 @@ model Attachment {
   uploadedBy String
   uploader   User    @relation(fields: [uploadedBy], references: [id])
 
+  // Column Identification Relations
+  columnConfigurations ColumnConfiguration[]
+
   @@map("attachments")
+}
+
+model ColumnConfiguration {
+  id          String   @id @default(uuid())
+  name        String?  // Optional name for the configuration
+  description String?  // Optional description
+  configuration Json   // Column mapping configuration
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  fileId    String?
+  file      Attachment? @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  mappings  ColumnMapping[]
+
+  @@map("column_configurations")
+}
+
+model ColumnMapping {
+  id              String   @id @default(uuid())
+  columnIndex     Int      // Zero-based column index
+  columnName      String   // Original column name
+  columnType      String   // 'source', 'target', 'context', 'notes', 'status', 'key', 'skip'
+  languageCode    String?  // Language code for source/target columns
+  isRequired      Boolean  @default(false)
+  customSettings  Json?    // Additional custom settings
+  createdAt       DateTime @default(now())
+
+  // Relations
+  configurationId String
+  configuration   ColumnConfiguration @relation(fields: [configurationId], references: [id], onDelete: Cascade)
+
+  @@map("column_mappings")
 }

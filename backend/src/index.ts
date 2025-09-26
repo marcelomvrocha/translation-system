@@ -10,6 +10,7 @@ import authRoutes from '@/routes/authRoutes';
 import projectRoutes from '@/routes/projectRoutes';
 import fileRoutes from '@/routes/fileRoutes';
 import segmentRoutes from '@/routes/segmentRoutes';
+import columnIdentificationRoutes from '@/routes/columnIdentificationRoutes';
 
 // Import middleware
 import { apiLimiter } from '@/middleware/rateLimiter';
@@ -58,6 +59,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/files', fileRoutes);
 app.use('/api/segments', segmentRoutes);
+app.use('/api/column-identification', columnIdentificationRoutes);
 
 // Additional test endpoint
 app.get('/api/test', (req, res) => {
