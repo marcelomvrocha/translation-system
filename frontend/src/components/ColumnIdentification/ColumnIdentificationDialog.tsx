@@ -26,6 +26,7 @@ import ColumnPreview from './ColumnPreview';
 import ColumnConfigurationTable from './ColumnConfigurationTable';
 import PresetSelector from './PresetSelector';
 import { ColumnInfo, ColumnConfiguration, ColumnPreset } from '@/types/columnIdentification';
+import apiService from '@/services/api';
 
 interface ColumnIdentificationDialogProps {
   open: boolean;
@@ -73,12 +74,7 @@ const ColumnIdentificationDialog: React.FC<ColumnIdentificationDialogProps> = ({
 
   const loadPresets = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/column-identification/presets`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-        }
-      });
-      const result = await response.json();
+      const result = await apiService.get('/column-identification/presets');
       if (result.success) {
         setPresets(result.data);
       }
@@ -92,13 +88,7 @@ const ColumnIdentificationDialog: React.FC<ColumnIdentificationDialogProps> = ({
     setError(null);
     
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/column-identification/files/${fileId}/columns?maxSampleRows=10`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-        }
-      });
-      
-      const result = await response.json();
+      const result = await apiService.get(`/column-identification/files/${fileId}/columns?maxSampleRows=10`);
       
       if (result.success) {
         setColumns(result.data.columns);
@@ -121,9 +111,15 @@ const ColumnIdentificationDialog: React.FC<ColumnIdentificationDialogProps> = ({
         
         setError(errorMessage);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error detecting columns:', error);
-      setError('Failed to detect columns. Please check your internet connection and try again.');
+      
+      // Handle authentication errors specifically
+      if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
+        setError('Your session has expired. Please log in again.');
+      } else {
+        setError('Failed to detect columns. Please check your internet connection and try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -169,34 +165,16 @@ const ColumnIdentificationDialog: React.FC<ColumnIdentificationDialogProps> = ({
 
     try {
       // Save configuration
-      const saveResponse = await fetch(`${import.meta.env.VITE_API_URL}/column-identification/projects/${projectId}/files/${fileId}/column-config`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-        },
-        body: JSON.stringify(configuration)
-      });
-
-      const saveResult = await saveResponse.json();
+      const saveResult = await apiService.post(`/column-identification/projects/${projectId}/files/${fileId}/column-config`, configuration);
       
       if (!saveResult.success) {
         throw new Error(saveResult.error || 'Failed to save configuration');
       }
 
       // Parse with configuration
-      const parseResponse = await fetch(`${import.meta.env.VITE_API_URL}/column-identification/projects/${projectId}/files/${fileId}/parse-with-config`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-        },
-        body: JSON.stringify({
-          configurationId: saveResult.data.id
-        })
+      const parseResult = await apiService.post(`/column-identification/projects/${projectId}/files/${fileId}/parse-with-config`, {
+        configurationId: saveResult.data.id
       });
-
-      const parseResult = await parseResponse.json();
       
       if (parseResult.success) {
         onConfigurationComplete(configuration);
