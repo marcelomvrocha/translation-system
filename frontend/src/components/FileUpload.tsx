@@ -246,7 +246,11 @@ const FileUpload: React.FC<FileUploadProps> = ({
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        onClick={() => fileInputRef.current?.click()}
+        onClick={() => {
+          console.log('File upload area clicked');
+          console.log('File input ref:', fileInputRef.current);
+          fileInputRef.current?.click();
+        }}
       >
         <UploadIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
         <Typography variant="h6" gutterBottom>
@@ -264,7 +268,10 @@ const FileUpload: React.FC<FileUploadProps> = ({
           multiple
           accept={acceptedTypes.join(',')}
           style={{ display: 'none' }}
-          onChange={(e) => handleFileSelect(e.target.files)}
+          onChange={(e) => {
+            console.log('File input changed:', e.target.files);
+            handleFileSelect(e.target.files);
+          }}
         />
       </Paper>
 
