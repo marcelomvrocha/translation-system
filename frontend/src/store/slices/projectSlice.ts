@@ -61,9 +61,10 @@ export const createProject = createAsyncThunk(
 
 export const updateProject = createAsyncThunk(
   'project/updateProject',
-  async (params: { projectId: string; projectData: UpdateProjectRequest }, { rejectWithValue }) => {
+  async (params: { id: string; name: string; description?: string; sourceLanguage: string; targetLanguage: string }, { rejectWithValue }) => {
     try {
-      const project = await ProjectService.updateProject(params.projectId, params.projectData);
+      const { id, ...projectData } = params;
+      const project = await ProjectService.updateProject(id, projectData);
       return project;
     } catch (error: any) {
       return rejectWithValue(error.message || 'Failed to update project');

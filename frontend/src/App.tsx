@@ -12,6 +12,8 @@ import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
 import DashboardPage from '@/pages/DashboardPage';
 import ProjectPage from '@/pages/ProjectPage';
+import ProjectManagementPage from '@/pages/ProjectManagementPage';
+import ProjectDetailPage from '@/pages/ProjectDetailPage';
 import ProfilePage from '@/pages/ProfilePage';
 
 // Components
@@ -125,11 +127,21 @@ const AppContent: React.FC = () => {
             }
           />
           <Route
+            path="/projects"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <ProjectManagementPage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/projects/:id"
             element={
               <ProtectedRoute>
                 <Layout>
-                  <ProjectPage />
+                  <ProjectDetailPage />
                 </Layout>
               </ProtectedRoute>
             }

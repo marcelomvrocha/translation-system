@@ -8,6 +8,7 @@ import { Server } from 'socket.io';
 // Import routes
 import authRoutes from '@/routes/authRoutes';
 import projectRoutes from '@/routes/projectRoutes';
+import fileRoutes from '@/routes/fileRoutes';
 
 // Import middleware
 import { apiLimiter } from '@/middleware/rateLimiter';
@@ -54,6 +55,7 @@ app.get('/health', (req, res) => {
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
+app.use('/api/files', fileRoutes);
 
 // Additional test endpoint
 app.get('/api/test', (req, res) => {

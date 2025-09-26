@@ -224,11 +224,11 @@ POST   /api/ai/offline-setup
 - [x] Set up basic authentication system
 - [x] Create user registration and login
 
-#### Week 2: Core Models
-- [ ] Implement user management
-- [ ] Create project CRUD operations
-- [ ] Set up project collaboration system
-- [ ] Implement basic file upload functionality
+#### Week 2: Core Models ✅ COMPLETED
+- [x] Implement user management
+- [x] Create project CRUD operations
+- [x] Set up project collaboration system
+- [x] Implement basic file upload functionality
 
 #### Week 3: Translation Interface
 - [ ] Build grid-based translation interface using AG-Grid
