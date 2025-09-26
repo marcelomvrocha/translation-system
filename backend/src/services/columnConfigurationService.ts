@@ -215,6 +215,9 @@ export class ColumnConfigurationService {
         throw new Error(`Unsupported file type: ${fileType}`);
       }
 
+      console.log(`Processing ${data.length - 1} data rows (excluding header)`);
+      console.log('Mappings:', mappings);
+
       // Process each row
       for (let rowIndex = 1; rowIndex < data.length; rowIndex++) { // Skip header row
         const row = data[rowIndex];
@@ -227,6 +230,8 @@ export class ColumnConfigurationService {
         const notes = notesMappings.map(m => row[m.columnIndex] || '').filter(t => t.trim());
         const keys = keyMappings.map(m => row[m.columnIndex] || '').filter(t => t.trim());
 
+        console.log(`Row ${rowIndex}:`, { sourceTexts, targetTexts, contexts, notes, keys });
+
         // Create segments for each source text
         sourceTexts.forEach((sourceText, sourceIndex) => {
           const segmentKey = keys[0] || `row_${rowIndex}_source_${sourceIndex}`;
@@ -234,16 +239,21 @@ export class ColumnConfigurationService {
           const context = contexts.join(' | ') || undefined;
           const note = notes.join(' | ') || undefined;
 
-          segments.push({
+          const segment = {
             segmentKey,
             sourceText: sourceText.trim(),
             targetText: targetText.trim() || null,
             context,
             notes: note,
             status: targetText.trim() ? 'translated' : 'new'
-          });
+          };
+
+          console.log(`Creating segment:`, segment);
+          segments.push(segment);
         });
       }
+
+      console.log(`Total segments created: ${segments.length}`);
 
       // Save segments to database
       await this.saveSegmentsToDatabase(segments, projectId);
@@ -303,6 +313,10 @@ export class ColumnConfigurationService {
           status: segment.status
         }))
       });
+      
+      console.log(`Created ${newSegments.length} segments for project ${projectId}`);
+    } else {
+      console.log('No new segments to create - all segments already exist');
     }
   }
 
