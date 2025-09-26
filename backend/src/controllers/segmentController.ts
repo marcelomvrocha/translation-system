@@ -11,6 +11,8 @@ export class SegmentController {
     const { page = 1, limit = 50, status, search } = req.query;
     const userId = req.user!.id;
 
+    console.log(`Getting segments for project ${projectId}, user ${userId}`);
+
     // Verify project access
     const project = await prisma.project.findFirst({
       where: {
@@ -23,11 +25,14 @@ export class SegmentController {
     });
 
     if (!project) {
+      console.log(`Project ${projectId} not found or access denied for user ${userId}`);
       return res.status(404).json({
         success: false,
         error: 'Project not found or access denied'
       });
     }
+
+    console.log(`Project found: ${project.name}`);
 
     // Build where clause
     const where: any = { projectId };
@@ -41,6 +46,8 @@ export class SegmentController {
         { segmentKey: { contains: search as string, mode: 'insensitive' } }
       ];
     }
+
+    console.log(`Querying segments with where clause:`, where);
 
     // Get segments with pagination
     const [segments, total] = await Promise.all([
@@ -81,6 +88,9 @@ export class SegmentController {
       }),
       prisma.segment.count({ where })
     ]);
+
+    console.log(`Found ${segments.length} segments out of ${total} total for project ${projectId}`);
+    console.log('Segments:', segments.map(s => ({ id: s.id, segmentKey: s.segmentKey, sourceText: s.sourceText })));
 
     const response: ApiResponse = {
       success: true,
