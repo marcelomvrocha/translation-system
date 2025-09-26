@@ -216,7 +216,7 @@ const ProjectDetailPage: React.FC = () => {
           severity: 'success' 
         });
         // Refresh the files list to show updated content
-        fetchProjectFiles(projectId);
+        loadFiles();
       } else {
         setSnackbar({ open: true, message: 'Failed to parse files', severity: 'error' });
       }
@@ -488,7 +488,7 @@ const ProjectDetailPage: React.FC = () => {
                       severity: 'success' 
                     });
                     // Refresh the files list to show updated content
-                    fetchProjectFiles(projectId!);
+                    loadFiles();
                   } else {
                     setSnackbar({ 
                       open: true, 
