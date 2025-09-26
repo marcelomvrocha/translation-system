@@ -34,9 +34,11 @@ import { useAppDispatch, useAppSelector } from '@/hooks/redux';
 import { getProjects, createProject } from '@/store/slices/projectSlice';
 import { showSnackbar } from '@/store/slices/uiSlice';
 import { CreateProjectRequest } from '@/types';
+import { useNavigate } from 'react-router-dom';
 
 const DashboardPage: React.FC = () => {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const { projects, isLoading } = useAppSelector((state) => state.project);
   const { user } = useAppSelector((state) => state.auth);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -232,7 +234,10 @@ const DashboardPage: React.FC = () => {
                   </Typography>
                 </CardContent>
                 <CardActions>
-                  <Button size="small" href={`/projects/${project.id}`}>
+                  <Button 
+                    size="small" 
+                    onClick={() => navigate(`/projects/${project.id}`)}
+                  >
                     Open Project
                   </Button>
                   <Button size="small" color="secondary">
