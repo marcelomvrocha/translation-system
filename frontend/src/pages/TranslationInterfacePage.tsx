@@ -118,19 +118,33 @@ const TranslationInterfacePage: React.FC = () => {
         ...(statusFilter !== 'all' && { status: statusFilter })
       });
 
+      const token = localStorage.getItem('accessToken');
+      console.log('Loading segments for project:', projectId);
+      console.log('Using token:', token ? 'Present' : 'Missing');
+      console.log('API URL:', `${import.meta.env.VITE_API_URL}/segments/project/${projectId}?${params}`);
+
       const response = await fetch(`${import.meta.env.VITE_API_URL}/segments/project/${projectId}?${params}`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+          'Authorization': `Bearer ${token}`
         }
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+
       if (response.ok) {
         const result = await response.json();
-        setSegments(result.data);
+        console.log('Segments response:', result);
+        console.log('Segments data:', result.data);
+        console.log('Segments count:', result.data?.length || 0);
+        setSegments(result.data || []);
       } else {
-        setError('Failed to load segments');
+        const errorText = await response.text();
+        console.error('Failed to load segments:', response.status, errorText);
+        setError(`Failed to load segments: ${response.status} ${errorText}`);
       }
     } catch (err) {
+      console.error('Error loading segments:', err);
       setError('Failed to load segments');
     } finally {
       setLoading(false);
@@ -142,15 +156,25 @@ const TranslationInterfacePage: React.FC = () => {
     if (!projectId) return;
     
     try {
+      const token = localStorage.getItem('accessToken');
+      console.log('Loading stats for project:', projectId);
+      console.log('Using token:', token ? 'Present' : 'Missing');
+
       const response = await fetch(`${import.meta.env.VITE_API_URL}/segments/project/${projectId}/stats`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+          'Authorization': `Bearer ${token}`
         }
       });
 
+      console.log('Stats response status:', response.status);
+
       if (response.ok) {
         const result = await response.json();
+        console.log('Stats response:', result);
         setStats(result.data);
+      } else {
+        const errorText = await response.text();
+        console.error('Failed to load stats:', response.status, errorText);
       }
     } catch (err) {
       console.error('Failed to load stats:', err);
