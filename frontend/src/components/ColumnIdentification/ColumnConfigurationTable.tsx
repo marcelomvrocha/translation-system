@@ -18,7 +18,8 @@ import {
   Chip,
   Tooltip,
   IconButton,
-  Alert
+  Alert,
+  Typography
 } from '@mui/material';
 import {
   Delete as DeleteIcon,
