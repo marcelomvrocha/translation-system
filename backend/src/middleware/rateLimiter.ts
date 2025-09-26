@@ -11,9 +11,9 @@ export const apiLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  // Skip rate limiting in development
+  // Skip rate limiting in development or when NODE_ENV is not set (default to development)
   skip: (req) => {
-    return process.env.NODE_ENV === 'development';
+    return !process.env.NODE_ENV || process.env.NODE_ENV === 'development';
   },
 });
 
