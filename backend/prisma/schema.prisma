@@ -175,6 +175,7 @@ model ColumnConfiguration {
   file      Attachment? @relation(fields: [fileId], references: [id], onDelete: Cascade)
   mappings  ColumnMapping[]
 
+  @@unique([projectId, fileId])
   @@map("column_configurations")
 }
 
