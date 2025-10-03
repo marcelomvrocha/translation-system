@@ -754,6 +754,11 @@ const TranslationInterfacePage: React.FC = () => {
             </Grid>
             <Grid item xs={12} sm={12} md={5}>
               <Box display="flex" gap={1} flexWrap="wrap" alignItems="center">
+                {selectedSegments.length > 0 && (
+                  <Typography variant="body2" color="primary" sx={{ mr: 1 }}>
+                    {selectedSegments.length} selected
+                  </Typography>
+                )}
                 <Button
                   variant="outlined"
                   size="small"
