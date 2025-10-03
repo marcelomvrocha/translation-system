@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Drawer, AppBar, Toolbar, Typography, IconButton, Avatar, Menu, MenuItem } from '@mui/material';
 import { Menu as MenuIcon, AccountCircle, Logout } from '@mui/icons-material';
+import { useLocation } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '@/hooks/redux';
 import { toggleSidebar } from '@/store/slices/uiSlice';
 import { logout } from '@/store/slices/authSlice';
@@ -16,7 +17,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const dispatch = useAppDispatch();
   const { sidebarOpen } = useAppSelector((state) => state.ui);
   const { user } = useAppSelector((state) => state.auth);
+  const location = useLocation();
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  
+  // Check if we're on the Translation Interface page
+  const isTranslationInterface = location.pathname.includes('/translate');
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -141,7 +146,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         component="main"
         sx={{
           flexGrow: 1,
-          p: 3,
+          p: isTranslationInterface ? 0 : 3, // No padding for Translation Interface
           width: { sm: `calc(100% - ${sidebarOpen ? DRAWER_WIDTH : 0}px)` },
           minHeight: '100vh',
           overflow: 'visible',
