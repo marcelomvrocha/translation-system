@@ -208,6 +208,20 @@ const TranslationInterfacePage: React.FC = () => {
     console.log('Segments data:', segments);
   }, [segments]);
 
+  // Handle window resize for grid responsiveness
+  useEffect(() => {
+    const handleResize = () => {
+      if (gridApi) {
+        setTimeout(() => {
+          gridApi.sizeColumnsToFit();
+        }, 100);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [gridApi]);
+
   // Add debugging for loading state changes
   useEffect(() => {
     console.log('TranslationInterfacePage: loading state changed to:', loading);
@@ -223,20 +237,35 @@ const TranslationInterfacePage: React.FC = () => {
     {
       headerName: 'Key',
       field: 'segmentKey',
-      width: 200,
+      minWidth: 150,
+      maxWidth: 250,
       pinned: 'left',
       checkboxSelection: true,
       headerCheckboxSelection: true,
+      resizable: true,
+      suppressSizeToFit: true,
+      cellRenderer: (params: any) => (
+        <div style={{ 
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          padding: '8px 0'
+        }}>
+          {params.value}
+        </div>
+      ),
     },
     {
       headerName: 'Source Text',
       field: 'sourceText',
-      width: 300,
+      minWidth: 200,
+      flex: 1,
       cellRenderer: (params: any) => (
         <div style={{ 
           whiteSpace: 'pre-wrap', 
           wordBreak: 'break-word',
-          padding: '8px 0'
+          padding: '8px 0',
+          lineHeight: '1.4'
         }}>
           {params.value}
         </div>
@@ -245,7 +274,8 @@ const TranslationInterfacePage: React.FC = () => {
     {
       headerName: 'Target Text',
       field: 'targetText',
-      width: 300,
+      minWidth: 200,
+      flex: 1,
       editable: true,
       cellEditor: 'agLargeTextCellEditor',
       cellEditorParams: {
@@ -257,7 +287,8 @@ const TranslationInterfacePage: React.FC = () => {
           whiteSpace: 'pre-wrap', 
           wordBreak: 'break-word',
           padding: '8px 0',
-          minHeight: '40px'
+          minHeight: '40px',
+          lineHeight: '1.4'
         }}>
           {params.value || ''}
         </div>
@@ -267,6 +298,8 @@ const TranslationInterfacePage: React.FC = () => {
       headerName: 'Status',
       field: 'status',
       width: 120,
+      minWidth: 100,
+      maxWidth: 150,
       cellRenderer: (params: any) => {
         const status = params.value;
         const colors: Record<string, string> = {
@@ -290,6 +323,8 @@ const TranslationInterfacePage: React.FC = () => {
       headerName: 'Translator',
       field: 'translator.name',
       width: 150,
+      minWidth: 120,
+      maxWidth: 200,
       cellRenderer: (params: any) => {
         const translator = params.data.translator;
         return translator ? (
@@ -301,7 +336,13 @@ const TranslationInterfacePage: React.FC = () => {
                 style={{ width: 24, height: 24, borderRadius: '50%' }}
               />
             )}
-            <span>{translator.name}</span>
+            <span style={{ 
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis'
+            }}>
+              {translator.name}
+            </span>
           </div>
         ) : '-';
       },
@@ -309,7 +350,9 @@ const TranslationInterfacePage: React.FC = () => {
     {
       headerName: 'Updated',
       field: 'updatedAt',
-      width: 150,
+      width: 120,
+      minWidth: 100,
+      maxWidth: 150,
       cellRenderer: (params: any) => {
         return new Date(params.value).toLocaleDateString();
       },
@@ -324,6 +367,11 @@ const TranslationInterfacePage: React.FC = () => {
     console.log('Row Data at grid ready:', segments);
     setGridApi(params.api);
     setColumnApi(params.columnApi);
+    
+    // Auto-size columns on grid ready
+    setTimeout(() => {
+      params.api.sizeColumnsToFit();
+    }, 100);
   };
 
   const onSelectionChanged = () => {
@@ -422,132 +470,164 @@ const TranslationInterfacePage: React.FC = () => {
   }
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ 
+      height: 'calc(100vh - 64px)', // Subtract app bar height
+      width: '100%',
+      maxWidth: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden',
+      margin: 0,
+      padding: 0
+    }}>
       {/* Header */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4" component="h1">
-          Translation Interface
-        </Typography>
-        <Box display="flex" gap={2}>
-          <Button
-            variant="outlined"
-            startIcon={<RefreshIcon />}
-            onClick={loadSegments}
-          >
-            Refresh
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={<DownloadIcon />}
-            disabled={segments.length === 0}
-          >
-            Export
-          </Button>
+      <Box sx={{ p: 3, pb: 0 }}>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+          <Typography variant="h4" component="h1">
+            Translation Interface
+          </Typography>
+          <Box display="flex" gap={2}>
+            <Button
+              variant="outlined"
+              startIcon={<RefreshIcon />}
+              onClick={loadSegments}
+            >
+              Refresh
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<DownloadIcon />}
+              disabled={segments.length === 0}
+            >
+              Export
+            </Button>
+          </Box>
         </Box>
       </Box>
 
       {/* Statistics */}
       {stats && (
-        <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid item xs={12} sm={6} md={3}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" color="primary">
-                  {stats.total}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Total Segments
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          {Object.entries(stats.byStatus).map(([status, count]) => (
-            <Grid item xs={12} sm={6} md={3} key={status}>
+        <Box sx={{ px: 3 }}>
+          <Grid container spacing={2} sx={{ mb: 3 }}>
+            <Grid item xs={12} sm={6} md={3}>
               <Card>
                 <CardContent>
-                  <Box display="flex" alignItems="center" gap={1}>
-                    {getStatusIcon(status)}
-                    <Typography variant="h6">
-                      {count as number}
-                    </Typography>
-                  </Box>
+                  <Typography variant="h6" color="primary">
+                    {stats.total}
+                  </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {status.replace('_', ' ').toUpperCase()}
+                    Total Segments
                   </Typography>
                 </CardContent>
               </Card>
             </Grid>
-          ))}
-        </Grid>
+            {Object.entries(stats.byStatus).map(([status, count]) => (
+              <Grid item xs={12} sm={6} md={3} key={status}>
+                <Card>
+                  <CardContent>
+                    <Box display="flex" alignItems="center" gap={1}>
+                      {getStatusIcon(status)}
+                      <Typography variant="h6">
+                        {count as number}
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" color="text.secondary">
+                      {status.replace('_', ' ').toUpperCase()}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
       )}
 
       {/* Filters */}
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} sm={6} md={4}>
-            <TextField
-              fullWidth
-              placeholder="Search segments..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              InputProps={{
-                startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />
-              }}
-            />
+      <Box sx={{ px: 3, mb: 3 }}>
+        <Paper sx={{ p: 2 }}>
+          <Grid container spacing={2} alignItems="center">
+            <Grid item xs={12} sm={6} md={4}>
+              <TextField
+                fullWidth
+                placeholder="Search segments..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                InputProps={{
+                  startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <FormControl fullWidth>
+                <InputLabel>Status</InputLabel>
+                <Select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  label="Status"
+                >
+                  <MenuItem value="all">All Status</MenuItem>
+                  <MenuItem value="new">New</MenuItem>
+                  <MenuItem value="in_progress">In Progress</MenuItem>
+                  <MenuItem value="translated">Translated</MenuItem>
+                  <MenuItem value="reviewed">Reviewed</MenuItem>
+                  <MenuItem value="approved">Approved</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={12} md={5}>
+              <Box display="flex" gap={1} flexWrap="wrap">
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => handleBulkUpdate('translated')}
+                  disabled={selectedSegments.length === 0}
+                >
+                  Mark as Translated
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => handleBulkUpdate('reviewed')}
+                  disabled={selectedSegments.length === 0}
+                >
+                  Mark as Reviewed
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => handleBulkUpdate('approved')}
+                  disabled={selectedSegments.length === 0}
+                >
+                  Mark as Approved
+                </Button>
+              </Box>
+            </Grid>
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <FormControl fullWidth>
-              <InputLabel>Status</InputLabel>
-              <Select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                label="Status"
-              >
-                <MenuItem value="all">All Status</MenuItem>
-                <MenuItem value="new">New</MenuItem>
-                <MenuItem value="in_progress">In Progress</MenuItem>
-                <MenuItem value="translated">Translated</MenuItem>
-                <MenuItem value="reviewed">Reviewed</MenuItem>
-                <MenuItem value="approved">Approved</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12} sm={12} md={5}>
-            <Box display="flex" gap={1} flexWrap="wrap">
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={() => handleBulkUpdate('translated')}
-                disabled={selectedSegments.length === 0}
-              >
-                Mark as Translated
-              </Button>
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={() => handleBulkUpdate('reviewed')}
-                disabled={selectedSegments.length === 0}
-              >
-                Mark as Reviewed
-              </Button>
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={() => handleBulkUpdate('approved')}
-                disabled={selectedSegments.length === 0}
-              >
-                Mark as Approved
-              </Button>
-            </Box>
-          </Grid>
-        </Grid>
-      </Paper>
+        </Paper>
+      </Box>
 
       {/* Translation Grid */}
-      <Paper sx={{ height: '70vh' }}>
+      <Paper sx={{ 
+        flex: 1,
+        minHeight: '400px',
+        width: '100%',
+        maxWidth: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden'
+      }}>
         <div
           className="ag-theme-alpine"
-          style={{ height: '100%', width: '100%' }}
+          style={{ 
+            height: '100%', 
+            width: '100%',
+            flex: 1,
+            minHeight: 0,
+            '--ag-header-height': '50px',
+            '--ag-row-height': '60px',
+            '--ag-font-size': '14px',
+            '--ag-font-family': 'Roboto, sans-serif'
+          } as React.CSSProperties}
         >
           <AgGridReact
             columnDefs={columnDefs}
@@ -562,24 +642,36 @@ const TranslationInterfacePage: React.FC = () => {
               console.log('TranslationInterfacePage: AG-Grid first data rendered');
               console.log('Row count:', params.api.getDisplayedRowCount());
               console.log('Row data:', segments);
+              // Auto-size columns on first render
+              params.api.sizeColumnsToFit();
             }}
             onModelUpdated={(params) => {
               console.log('TranslationInterfacePage: AG-Grid model updated');
               console.log('Row count:', params.api.getDisplayedRowCount());
             }}
+            onGridSizeChanged={(params) => {
+              // Auto-size columns when grid size changes
+              params.api.sizeColumnsToFit();
+            }}
             defaultColDef={{
               resizable: true,
               sortable: true,
               filter: true,
+              wrapText: true,
+              autoHeight: false,
             }}
             getRowId={(params) => params.data.id}
+            suppressHorizontalScroll={false}
+            suppressColumnVirtualisation={true}
+            rowHeight={60}
+            headerHeight={50}
           />
         </div>
       </Paper>
 
       {/* Selection Info */}
       {selectedSegments.length > 0 && (
-        <Box mt={2}>
+        <Box sx={{ px: 3, py: 2 }}>
           <Typography variant="body2" color="text.secondary">
             {selectedSegments.length} segment(s) selected
           </Typography>
