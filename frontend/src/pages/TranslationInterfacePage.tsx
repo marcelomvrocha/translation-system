@@ -89,7 +89,7 @@ function TabPanel(props: TabPanelProps) {
 }
 
 const TranslationInterfacePage: React.FC = () => {
-  const { projectId } = useParams<{ projectId: string }>();
+  const { id: projectId } = useParams<{ id: string }>();
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
 
@@ -107,8 +107,13 @@ const TranslationInterfacePage: React.FC = () => {
 
   // Load segments
   const loadSegments = useCallback(async () => {
-    if (!projectId) return;
+    console.log('loadSegments function called with projectId:', projectId);
+    if (!projectId) {
+      console.log('loadSegments: No projectId, returning early');
+      return;
+    }
     
+    console.log('loadSegments: Starting to load segments...');
     setLoading(true);
     try {
       const params = new URLSearchParams({
@@ -185,9 +190,16 @@ const TranslationInterfacePage: React.FC = () => {
     console.log('TranslationInterfacePage: useEffect triggered');
     console.log('Project ID:', projectId);
     console.log('User:', user);
-    loadSegments();
-    loadStats();
-  }, [loadSegments, loadStats]);
+    console.log('loadSegments function:', typeof loadSegments);
+    console.log('loadStats function:', typeof loadStats);
+    if (projectId) {
+      console.log('Calling loadSegments and loadStats...');
+      loadSegments();
+      loadStats();
+    } else {
+      console.log('No projectId, not calling loadSegments/loadStats');
+    }
+  }, [projectId, loadSegments, loadStats]);
 
   // Add debugging for segments state changes
   useEffect(() => {
