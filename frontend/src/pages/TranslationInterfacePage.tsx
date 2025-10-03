@@ -16,7 +16,10 @@ import {
   Snackbar,
   LinearProgress,
   Paper,
-  Avatar
+  Avatar,
+  Menu,
+  ListItemIcon,
+  ListItemText
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -27,8 +30,13 @@ import {
   HourglassEmpty as HourglassEmptyIcon,
   RateReview as RateReviewIcon,
   Verified as VerifiedIcon,
-  Help as HelpIcon
+  Help as HelpIcon,
+  TableChart as ExcelIcon,
+  Description as CsvIcon,
+  Code as JsonIcon
 } from '@mui/icons-material';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 import { AgGridReact } from 'ag-grid-react';
 import { ColDef, GridReadyEvent, GridApi } from 'ag-grid-community';
 import 'ag-grid-community/styles/ag-grid.css';
@@ -74,6 +82,7 @@ const TranslationInterfacePage: React.FC = () => {
   }, []);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedSegments, setSelectedSegments] = useState<Segment[]>([]);
+  const [exportMenuAnchor, setExportMenuAnchor] = useState<null | HTMLElement>(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
   const [stats, setStats] = useState<any>(null);
   const [gridApi, setGridApi] = useState<GridApi | null>(null);
@@ -486,6 +495,107 @@ const TranslationInterfacePage: React.FC = () => {
     }
   };
 
+  // Export functions
+  const handleExportClick = (event: React.MouseEvent<HTMLElement>) => {
+    setExportMenuAnchor(event.currentTarget);
+  };
+
+  const handleExportMenuClose = () => {
+    setExportMenuAnchor(null);
+  };
+
+  const exportToExcel = (data: Segment[]) => {
+    const worksheet = XLSX.utils.json_to_sheet(data.map(segment => ({
+      'Segment Key': segment.segmentKey,
+      'Source Text': segment.sourceText,
+      'Target Text': segment.targetText || '',
+      'Status': segment.status,
+      'Translator': segment.translator?.name || 'Unassigned',
+      'Reviewer': segment.reviewer?.name || 'Unassigned',
+      'Created At': new Date(segment.createdAt).toLocaleDateString(),
+      'Updated At': new Date(segment.updatedAt).toLocaleDateString()
+    })));
+    
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Translation Segments');
+    
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const dataBlob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    saveAs(dataBlob, `translation-segments-${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
+  const exportToCSV = (data: Segment[]) => {
+    const csvData = data.map(segment => ({
+      'Segment Key': segment.segmentKey,
+      'Source Text': segment.sourceText,
+      'Target Text': segment.targetText || '',
+      'Status': segment.status,
+      'Translator': segment.translator?.name || 'Unassigned',
+      'Reviewer': segment.reviewer?.name || 'Unassigned',
+      'Created At': new Date(segment.createdAt).toLocaleDateString(),
+      'Updated At': new Date(segment.updatedAt).toLocaleDateString()
+    }));
+    
+    const worksheet = XLSX.utils.json_to_sheet(csvData);
+    const csv = XLSX.utils.sheet_to_csv(worksheet);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    saveAs(blob, `translation-segments-${new Date().toISOString().split('T')[0]}.csv`);
+  };
+
+  const exportToJSON = (data: Segment[]) => {
+    const jsonData = {
+      exportDate: new Date().toISOString(),
+      totalSegments: data.length,
+      segments: data.map(segment => ({
+        id: segment.id,
+        segmentKey: segment.segmentKey,
+        sourceText: segment.sourceText,
+        targetText: segment.targetText,
+        status: segment.status,
+        translator: segment.translator,
+        reviewer: segment.reviewer,
+        createdAt: segment.createdAt,
+        updatedAt: segment.updatedAt
+      }))
+    };
+    
+    const blob = new Blob([JSON.stringify(jsonData, null, 2)], { type: 'application/json' });
+    saveAs(blob, `translation-segments-${new Date().toISOString().split('T')[0]}.json`);
+  };
+
+  const handleExport = (format: 'excel' | 'csv' | 'json') => {
+    try {
+      const dataToExport = filteredSegments.length > 0 ? filteredSegments : segments;
+      
+      switch (format) {
+        case 'excel':
+          exportToExcel(dataToExport);
+          break;
+        case 'csv':
+          exportToCSV(dataToExport);
+          break;
+        case 'json':
+          exportToJSON(dataToExport);
+          break;
+      }
+      
+      setSnackbar({
+        open: true,
+        message: `Exported ${dataToExport.length} segments to ${format.toUpperCase()}`,
+        severity: 'success'
+      });
+    } catch (error) {
+      console.error('Export failed:', error);
+      setSnackbar({
+        open: true,
+        message: 'Export failed. Please try again.',
+        severity: 'error'
+      });
+    } finally {
+      handleExportMenuClose();
+    }
+  };
+
   const getStatusIcon = (status: string) => {
     const iconProps = { fontSize: 'small' as const };
     
@@ -664,9 +774,42 @@ const TranslationInterfacePage: React.FC = () => {
                     size="small"
                     startIcon={<DownloadIcon />}
                     disabled={filteredSegments.length === 0}
+                    onClick={handleExportClick}
                   >
                     Export
                   </Button>
+                  <Menu
+                    anchorEl={exportMenuAnchor}
+                    open={Boolean(exportMenuAnchor)}
+                    onClose={handleExportMenuClose}
+                    anchorOrigin={{
+                      vertical: 'bottom',
+                      horizontal: 'left',
+                    }}
+                    transformOrigin={{
+                      vertical: 'top',
+                      horizontal: 'left',
+                    }}
+                  >
+                    <MenuItem onClick={() => handleExport('excel')}>
+                      <ListItemIcon>
+                        <ExcelIcon fontSize="small" />
+                      </ListItemIcon>
+                      <ListItemText>Export to Excel</ListItemText>
+                    </MenuItem>
+                    <MenuItem onClick={() => handleExport('csv')}>
+                      <ListItemIcon>
+                        <CsvIcon fontSize="small" />
+                      </ListItemIcon>
+                      <ListItemText>Export to CSV</ListItemText>
+                    </MenuItem>
+                    <MenuItem onClick={() => handleExport('json')}>
+                      <ListItemIcon>
+                        <JsonIcon fontSize="small" />
+                      </ListItemIcon>
+                      <ListItemText>Export to JSON</ListItemText>
+                    </MenuItem>
+                  </Menu>
                 </Box>
               </Box>
             </Grid>
