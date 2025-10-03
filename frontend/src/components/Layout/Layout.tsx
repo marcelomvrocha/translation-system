@@ -147,16 +147,16 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         sx={{
           flexGrow: 1,
           p: isTranslationInterface ? 0 : 3, // No padding for Translation Interface
-          width: isTranslationInterface ? '100vw' : { sm: `calc(100% - ${sidebarOpen ? DRAWER_WIDTH : 0}px)` },
+          width: isTranslationInterface ? `calc(100vw - ${sidebarOpen ? DRAWER_WIDTH : 0}px)` : { sm: `calc(100% - ${sidebarOpen ? DRAWER_WIDTH : 0}px)` },
           minHeight: '100vh',
           overflow: 'visible',
           position: isTranslationInterface ? 'absolute' : 'relative',
           top: isTranslationInterface ? 0 : 'auto',
-          left: isTranslationInterface ? 0 : 'auto',
+          left: isTranslationInterface ? (sidebarOpen ? `${DRAWER_WIDTH}px` : 0) : 'auto',
           right: isTranslationInterface ? 0 : 'auto',
           zIndex: isTranslationInterface ? 1 : 'auto',
           transition: (theme) =>
-            theme.transitions.create(['width', 'margin'], {
+            theme.transitions.create(['width', 'margin', 'left'], {
               easing: theme.transitions.easing.sharp,
               duration: theme.transitions.duration.leavingScreen,
             }),
