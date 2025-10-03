@@ -5,11 +5,19 @@ import { createError } from './errorHandler';
 export const validate = (schema: ZodSchema) => {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
-      schema.parse({
-        body: req.body,
-        query: req.query,
-        params: req.params,
-      });
+      // Check if schema expects body directly or wrapped in body object
+      const schemaKeys = Object.keys(schema.shape || {});
+      if (schemaKeys.includes('body')) {
+        // Schema expects { body, query, params } structure
+        schema.parse({
+          body: req.body,
+          query: req.query,
+          params: req.params,
+        });
+      } else {
+        // Schema expects data directly (like bulkUpdateSegmentsSchema)
+        schema.parse(req.body);
+      }
       next();
     } catch (error) {
       if (error instanceof z.ZodError) {

@@ -131,9 +131,9 @@ const TranslationInterfacePage: React.FC = () => {
       const token = localStorage.getItem('accessToken');
       console.log('Loading segments for project:', projectId);
       console.log('Using token:', token ? 'Present' : 'Missing');
-      console.log('API URL:', `${(import.meta as any).env.VITE_API_URL}/segments/project/${projectId}?${params}`);
+      console.log('API URL:', `/api/segments/project/${projectId}?${params}`);
 
-      const response = await fetch(`${(import.meta as any).env.VITE_API_URL}/segments/project/${projectId}?${params}`, {
+      const response = await fetch(`/api/segments/project/${projectId}?${params}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -172,7 +172,7 @@ const TranslationInterfacePage: React.FC = () => {
       console.log('Loading stats for project:', projectId);
       console.log('Using token:', token ? 'Present' : 'Missing');
 
-      const response = await fetch(`${(import.meta as any).env.VITE_API_URL}/segments/project/${projectId}/stats`, {
+      const response = await fetch(`/api/segments/project/${projectId}/stats`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -445,7 +445,7 @@ const TranslationInterfacePage: React.FC = () => {
   const onCellValueChanged = async (params: any) => {
     if (params.colDef.field === 'targetText') {
       try {
-        const response = await fetch(`${(import.meta as any).env.VITE_API_URL}/segments/${params.data.id}`, {
+        const response = await fetch(`/api/segments/${params.data.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -481,7 +481,7 @@ const TranslationInterfacePage: React.FC = () => {
 
     try {
       console.log('Sending bulk update request...');
-      const response = await fetch(`${(import.meta as any).env.VITE_API_URL}/segments/project/${projectId}/bulk`, {
+      const response = await fetch(`/api/segments/project/${projectId}/bulk`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
