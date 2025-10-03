@@ -14,6 +14,11 @@ export const validate = (schema: ZodSchema) => {
           query: req.query,
           params: req.params,
         });
+      } else if (schemaKeys.includes('query')) {
+        // Schema expects { query } structure (like paginationSchema)
+        schema.parse({
+          query: req.query,
+        });
       } else {
         // Schema expects data directly (like bulkUpdateSegmentsSchema)
         schema.parse(req.body);

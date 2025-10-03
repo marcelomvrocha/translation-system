@@ -109,6 +109,7 @@ const TranslationInterfacePage: React.FC = () => {
     }
     
     console.log(`Total filtered segments: ${filtered.length} (from ${segments.length} total)`);
+    console.log('Filtered segment statuses:', filtered.map(s => ({ id: s.id, status: s.status, segmentKey: s.segmentKey })));
     return filtered;
   }, [segments, searchTerm, statusFilter]);
 
@@ -147,6 +148,11 @@ const TranslationInterfacePage: React.FC = () => {
         console.log('Segments response:', result);
         console.log('Segments data:', result.data);
         console.log('Segments count:', result.data?.length || 0);
+        
+        // Debug segment statuses
+        if (result.data && result.data.length > 0) {
+          console.log('Segment statuses:', result.data.map(s => ({ id: s.id, status: s.status, segmentKey: s.segmentKey })));
+        }
         
         
         setSegments(result.data || []);
