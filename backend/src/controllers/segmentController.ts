@@ -357,6 +357,9 @@ export class SegmentController {
     const { segments } = req.body;
     const userId = req.user!.id;
 
+    console.log('Bulk update request received:', { projectId, userId, segmentsCount: segments?.length });
+    console.log('Segments data:', segments);
+
     // Verify project access
     const project = await prisma.project.findFirst({
       where: {
