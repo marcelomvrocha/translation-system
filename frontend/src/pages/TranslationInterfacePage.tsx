@@ -334,19 +334,42 @@ const TranslationInterfacePage: React.FC = () => {
       maxWidth: 200,
       cellRenderer: (params: any) => {
         const translator = params.data.translator;
-        return translator ? (
+        console.log('Translator data:', translator);
+        console.log('Translator name:', translator?.name);
+        console.log('Translator avatarUrl:', translator?.avatarUrl);
+        
+        if (!translator) {
+          return '-';
+        }
+        
+        const initials = translator.name?.charAt(0)?.toUpperCase() || '?';
+        console.log('Initials:', initials);
+        
+        return (
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             {translator.avatarUrl ? (
               <img
                 src={translator.avatarUrl}
                 alt={translator.name}
                 style={{ width: 24, height: 24, borderRadius: '50%' }}
+                onError={(e) => {
+                  console.log('Image load error, falling back to avatar');
+                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.nextElementSibling.style.display = 'flex';
+                }}
               />
-            ) : (
-              <Avatar sx={{ width: 24, height: 24, fontSize: '12px', bgcolor: 'primary.main' }}>
-                {translator.name?.charAt(0)?.toUpperCase() || '?'}
-              </Avatar>
-            )}
+            ) : null}
+            <Avatar 
+              sx={{ 
+                width: 24, 
+                height: 24, 
+                fontSize: '12px', 
+                bgcolor: 'primary.main',
+                display: translator.avatarUrl ? 'none' : 'flex'
+              }}
+            >
+              {initials}
+            </Avatar>
             <span style={{ 
               whiteSpace: 'nowrap',
               overflow: 'hidden',
@@ -355,7 +378,7 @@ const TranslationInterfacePage: React.FC = () => {
               {translator.name}
             </span>
           </div>
-        ) : '-';
+        );
       },
     },
     {
