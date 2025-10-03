@@ -103,9 +103,12 @@ const TranslationInterfacePage: React.FC = () => {
     
     // Status filter
     if (statusFilter !== 'all') {
+      const beforeCount = filtered.length;
       filtered = filtered.filter(segment => segment.status === statusFilter);
+      console.log(`Status filter "${statusFilter}": ${beforeCount} -> ${filtered.length} segments`);
     }
     
+    console.log(`Total filtered segments: ${filtered.length} (from ${segments.length} total)`);
     return filtered;
   }, [segments, searchTerm, statusFilter]);
 
@@ -434,6 +437,7 @@ const TranslationInterfacePage: React.FC = () => {
   const onSelectionChanged = () => {
     if (gridApi) {
       const selectedRows = gridApi.getSelectedRows();
+      console.log('Selection changed:', selectedRows.length, 'rows selected');
       setSelectedSegments(selectedRows);
     }
   };
@@ -466,9 +470,17 @@ const TranslationInterfacePage: React.FC = () => {
 
   // Bulk operations
   const handleBulkUpdate = async (status: string) => {
-    if (selectedSegments.length === 0) return;
+    console.log('handleBulkUpdate called with status:', status);
+    console.log('Selected segments:', selectedSegments.length);
+    
+    if (selectedSegments.length === 0) {
+      console.log('No segments selected, returning early');
+      setSnackbar({ open: true, message: 'No segments selected', severity: 'warning' });
+      return;
+    }
 
     try {
+      console.log('Sending bulk update request...');
       const response = await fetch(`${(import.meta as any).env.VITE_API_URL}/segments/project/${projectId}/bulk`, {
         method: 'PUT',
         headers: {
@@ -483,14 +495,20 @@ const TranslationInterfacePage: React.FC = () => {
         })
       });
 
+      console.log('Bulk update response status:', response.status);
+      
       if (response.ok) {
-        setSnackbar({ open: true, message: 'Segments updated successfully', severity: 'success' });
+        console.log('Bulk update successful');
+        setSnackbar({ open: true, message: `Updated ${selectedSegments.length} segments to ${status}`, severity: 'success' });
         loadSegments();
         loadStats();
       } else {
+        const errorText = await response.text();
+        console.error('Bulk update failed:', response.status, errorText);
         setSnackbar({ open: true, message: 'Failed to update segments', severity: 'error' });
       }
     } catch (err) {
+      console.error('Bulk update error:', err);
       setSnackbar({ open: true, message: 'Failed to update segments', severity: 'error' });
     }
   };
