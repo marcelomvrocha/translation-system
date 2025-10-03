@@ -49,6 +49,7 @@ interface Segment {
   segmentKey: string;
   sourceText: string;
   targetText?: string;
+  aiSuggestion?: string;
   status: 'new' | 'in_progress' | 'translated' | 'reviewed' | 'approved';
   translator?: {
     id: string;
@@ -83,7 +84,7 @@ const TranslationInterfacePage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedSegments, setSelectedSegments] = useState<Segment[]>([]);
   const [exportMenuAnchor, setExportMenuAnchor] = useState<null | HTMLElement>(null);
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' | 'warning' });
   const [stats, setStats] = useState<any>(null);
   const [gridApi, setGridApi] = useState<GridApi | null>(null);
 
@@ -151,7 +152,7 @@ const TranslationInterfacePage: React.FC = () => {
         
         // Debug segment statuses
         if (result.data && result.data.length > 0) {
-          console.log('Segment statuses:', result.data.map(s => ({ id: s.id, status: s.status, segmentKey: s.segmentKey })));
+          console.log('Segment statuses:', result.data.map((s: Segment) => ({ id: s.id, status: s.status, segmentKey: s.segmentKey })));
         }
         
         
@@ -281,6 +282,31 @@ const TranslationInterfacePage: React.FC = () => {
           lineHeight: '1.4'
         }}>
           {params.value}
+        </div>
+      ),
+    },
+    {
+      headerName: 'Gaia Suggestion',
+      field: 'aiSuggestion',
+      minWidth: 200,
+      flex: 1,
+      editable: true,
+      cellEditor: 'agLargeTextCellEditor',
+      cellEditorParams: {
+        maxLength: 2000,
+        rows: 4,
+      },
+      cellRenderer: (params: any) => (
+        <div style={{ 
+          whiteSpace: 'pre-wrap', 
+          wordBreak: 'break-word',
+          padding: '8px 0',
+          minHeight: '40px',
+          lineHeight: '1.4',
+          fontStyle: params.value ? 'normal' : 'italic',
+          color: params.value ? 'inherit' : '#666'
+        }}>
+          {params.value || 'No suggestion yet...'}
         </div>
       ),
     },
@@ -471,6 +497,28 @@ const TranslationInterfacePage: React.FC = () => {
       } catch (err) {
         setSnackbar({ open: true, message: 'Failed to save translation', severity: 'error' });
       }
+    } else if (params.colDef.field === 'aiSuggestion') {
+      try {
+        const response = await fetch(`/api/segments/${params.data.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+          },
+          body: JSON.stringify({
+            aiSuggestion: params.newValue
+          })
+        });
+
+        if (response.ok) {
+          setSnackbar({ open: true, message: 'AI suggestion saved', severity: 'success' });
+          loadSegments();
+        } else {
+          setSnackbar({ open: true, message: 'Failed to save AI suggestion', severity: 'error' });
+        }
+      } catch (err) {
+        setSnackbar({ open: true, message: 'Failed to save AI suggestion', severity: 'error' });
+      }
     }
   };
 
@@ -532,6 +580,7 @@ const TranslationInterfacePage: React.FC = () => {
     const worksheet = XLSX.utils.json_to_sheet(data.map(segment => ({
       'Segment Key': segment.segmentKey,
       'Source Text': segment.sourceText,
+      'Gaia Suggestion': segment.aiSuggestion || '',
       'Target Text': segment.targetText || '',
       'Status': segment.status,
       'Translator': segment.translator?.name || 'Unassigned',
@@ -552,6 +601,7 @@ const TranslationInterfacePage: React.FC = () => {
     const csvData = data.map(segment => ({
       'Segment Key': segment.segmentKey,
       'Source Text': segment.sourceText,
+      'Gaia Suggestion': segment.aiSuggestion || '',
       'Target Text': segment.targetText || '',
       'Status': segment.status,
       'Translator': segment.translator?.name || 'Unassigned',
@@ -574,6 +624,7 @@ const TranslationInterfacePage: React.FC = () => {
         id: segment.id,
         segmentKey: segment.segmentKey,
         sourceText: segment.sourceText,
+        aiSuggestion: segment.aiSuggestion,
         targetText: segment.targetText,
         status: segment.status,
         translator: segment.translator,
@@ -926,7 +977,7 @@ const TranslationInterfacePage: React.FC = () => {
       >
         <Alert
           onClose={() => setSnackbar({ ...snackbar, open: false })}
-          severity={snackbar.severity}
+          severity={snackbar.severity as 'success' | 'error' | 'warning'}
           sx={{ width: '100%' }}
         >
           {snackbar.message}
