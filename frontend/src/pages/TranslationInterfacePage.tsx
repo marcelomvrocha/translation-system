@@ -302,8 +302,22 @@ const TranslationInterfacePage: React.FC = () => {
           reviewed: 'success',
           approved: 'success'
         };
+        
+        const getStatusIcon = (status: string) => {
+          const iconProps = { fontSize: 'small' as const };
+          switch (status) {
+            case 'new': return <FiberNewIcon {...iconProps} />;
+            case 'in_progress': return <HourglassEmptyIcon {...iconProps} />;
+            case 'translated': return <CheckIcon {...iconProps} />;
+            case 'reviewed': return <RateReviewIcon {...iconProps} />;
+            case 'approved': return <VerifiedIcon {...iconProps} />;
+            default: return <HelpIcon {...iconProps} />;
+          }
+        };
+        
         return (
           <Chip
+            icon={getStatusIcon(status)}
             label={status.replace('_', ' ').toUpperCase()}
             color={colors[status] as any}
             size="small"
@@ -532,12 +546,42 @@ const TranslationInterfacePage: React.FC = () => {
                   onChange={(e) => setStatusFilter(e.target.value)}
                   label="Status"
                 >
-                  <MenuItem value="all">All Status</MenuItem>
-                  <MenuItem value="new">New</MenuItem>
-                  <MenuItem value="in_progress">In Progress</MenuItem>
-                  <MenuItem value="translated">Translated</MenuItem>
-                  <MenuItem value="reviewed">Reviewed</MenuItem>
-                  <MenuItem value="approved">Approved</MenuItem>
+                  <MenuItem value="all">
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <HelpIcon fontSize="small" />
+                      All Status
+                    </Box>
+                  </MenuItem>
+                  <MenuItem value="new">
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <FiberNewIcon fontSize="small" color="success" />
+                      New
+                    </Box>
+                  </MenuItem>
+                  <MenuItem value="in_progress">
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <HourglassEmptyIcon fontSize="small" color="warning" />
+                      In Progress
+                    </Box>
+                  </MenuItem>
+                  <MenuItem value="translated">
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <CheckIcon fontSize="small" color="info" />
+                      Translated
+                    </Box>
+                  </MenuItem>
+                  <MenuItem value="reviewed">
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <RateReviewIcon fontSize="small" color="secondary" />
+                      Reviewed
+                    </Box>
+                  </MenuItem>
+                  <MenuItem value="approved">
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <VerifiedIcon fontSize="small" color="success" />
+                      Approved
+                    </Box>
+                  </MenuItem>
                 </Select>
               </FormControl>
             </Grid>
