@@ -78,6 +78,28 @@ const TranslationInterfacePage: React.FC = () => {
   const [stats, setStats] = useState<any>(null);
   const [gridApi, setGridApi] = useState<GridApi | null>(null);
 
+  // Client-side filtering
+  const filteredSegments = useMemo(() => {
+    let filtered = segments;
+    
+    // Search filter
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(segment =>
+        segment.sourceText.toLowerCase().includes(searchLower) ||
+        (segment.targetText && segment.targetText.toLowerCase().includes(searchLower)) ||
+        segment.segmentKey.toLowerCase().includes(searchLower)
+      );
+    }
+    
+    // Status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(segment => segment.status === statusFilter);
+    }
+    
+    return filtered;
+  }, [segments, searchTerm, statusFilter]);
+
   // Load segments
   const loadSegments = useCallback(async () => {
     console.log('loadSegments function called with projectId:', projectId);
@@ -91,9 +113,7 @@ const TranslationInterfacePage: React.FC = () => {
     try {
       const params = new URLSearchParams({
         page: '1',
-        limit: '1000',
-        ...(searchTerm && { search: searchTerm }),
-        ...(statusFilter !== 'all' && { status: statusFilter })
+        limit: '1000'
       });
 
       const token = localStorage.getItem('accessToken');
@@ -127,7 +147,7 @@ const TranslationInterfacePage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [projectId, searchTerm, statusFilter]);
+  }, [projectId]);
 
   // Load statistics
   const loadStats = useCallback(async () => {
@@ -560,7 +580,7 @@ const TranslationInterfacePage: React.FC = () => {
                     variant="outlined"
                     size="small"
                     startIcon={<DownloadIcon />}
-                    disabled={segments.length === 0}
+                    disabled={filteredSegments.length === 0}
                   >
                     Export
                   </Button>
@@ -596,7 +616,7 @@ const TranslationInterfacePage: React.FC = () => {
         >
           <AgGridReact
             columnDefs={columnDefs}
-            rowData={segments}
+            rowData={filteredSegments}
             onGridReady={onGridReady}
             onSelectionChanged={onSelectionChanged}
             onCellValueChanged={onCellValueChanged}
