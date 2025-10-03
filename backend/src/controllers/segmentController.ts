@@ -43,6 +43,7 @@ export class SegmentController {
       where.OR = [
         { sourceText: { contains: search as string, mode: 'insensitive' } },
         { targetText: { contains: search as string, mode: 'insensitive' } },
+        { aiSuggestion: { contains: search as string, mode: 'insensitive' } },
         { segmentKey: { contains: search as string, mode: 'insensitive' } }
       ];
     }
@@ -248,7 +249,7 @@ export class SegmentController {
 
   static updateSegment = handleAsync(async (req: Request, res: Response, next: NextFunction) => {
     const { segmentId } = req.params;
-    const { targetText, status } = req.body;
+    const { targetText, aiSuggestion, status } = req.body;
     const userId = req.user!.id;
 
     const segment = await prisma.segment.findFirst({
@@ -271,7 +272,10 @@ export class SegmentController {
     }
 
     // Determine the appropriate status and assignee
-    let updateData: any = { targetText };
+    let updateData: any = {};
+    
+    if (targetText !== undefined) updateData.targetText = targetText;
+    if (aiSuggestion !== undefined) updateData.aiSuggestion = aiSuggestion;
     
     if (status) {
       updateData.status = status;
@@ -382,6 +386,7 @@ export class SegmentController {
     const updatePromises = segments.map((segment: any) => {
       const updateData: any = {};
       if (segment.targetText !== undefined) updateData.targetText = segment.targetText;
+      if (segment.aiSuggestion !== undefined) updateData.aiSuggestion = segment.aiSuggestion;
       if (segment.status !== undefined) updateData.status = segment.status;
       if (segment.targetText && !segment.originalTargetText) {
         updateData.translatorId = userId;

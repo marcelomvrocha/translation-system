@@ -68,13 +68,14 @@ model ProjectCollaborator {
 }
 
 model Segment {
-  id          String   @id @default(uuid())
-  segmentKey  String
-  sourceText  String
-  targetText  String?
-  status      String   @default("new") // 'new', 'in_progress', 'translated', 'reviewed', 'approved'
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String   @id @default(uuid())
+  segmentKey   String
+  sourceText   String
+  targetText   String?
+  aiSuggestion String?
+  status       String   @default("new") // 'new', 'in_progress', 'translated', 'reviewed', 'approved'
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   // Relations
   projectId    String
