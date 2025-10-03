@@ -135,6 +135,8 @@ const TranslationInterfacePage: React.FC = () => {
         console.log('Segments response:', result);
         console.log('Segments data:', result.data);
         console.log('Segments count:', result.data?.length || 0);
+        
+        
         setSegments(result.data || []);
       } else {
         const errorText = await response.text();
@@ -334,16 +336,27 @@ const TranslationInterfacePage: React.FC = () => {
       maxWidth: 200,
       cellRenderer: (params: any) => {
         const translator = params.data.translator;
-        console.log('Translator data:', translator);
-        console.log('Translator name:', translator?.name);
-        console.log('Translator avatarUrl:', translator?.avatarUrl);
         
-        if (!translator) {
-          return '-';
+        // If no translator assigned, show "Unassigned"
+        if (!translator || !translator.name) {
+          return (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Avatar sx={{ width: 24, height: 24, fontSize: '12px', bgcolor: 'grey.300' }}>
+                ?
+              </Avatar>
+              <span style={{ 
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                color: 'grey.600'
+              }}>
+                Unassigned
+              </span>
+            </div>
+          );
         }
         
-        const initials = translator.name?.charAt(0)?.toUpperCase() || '?';
-        console.log('Initials:', initials);
+        const initials = translator.name.charAt(0).toUpperCase();
         
         return (
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -353,9 +366,12 @@ const TranslationInterfacePage: React.FC = () => {
                 alt={translator.name}
                 style={{ width: 24, height: 24, borderRadius: '50%' }}
                 onError={(e) => {
-                  console.log('Image load error, falling back to avatar');
+                  // Hide image and show avatar fallback
                   e.currentTarget.style.display = 'none';
-                  e.currentTarget.nextElementSibling.style.display = 'flex';
+                  const nextElement = e.currentTarget.nextElementSibling as HTMLElement;
+                  if (nextElement) {
+                    nextElement.style.display = 'flex';
+                  }
                 }}
               />
             ) : null}
