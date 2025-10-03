@@ -8,12 +8,6 @@ import {
   Grid,
   Card,
   CardContent,
-  IconButton,
-  Tooltip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   FormControl,
   InputLabel,
   Select,
@@ -22,28 +16,25 @@ import {
   Snackbar,
   LinearProgress,
   Paper,
-  Tabs,
-  Tab
+  Avatar
 } from '@mui/material';
 import {
   Search as SearchIcon,
-  FilterList as FilterIcon,
-  Save as SaveIcon,
   Refresh as RefreshIcon,
   Download as DownloadIcon,
-  Upload as UploadIcon,
-  Translate as TranslateIcon,
   CheckCircle as CheckIcon,
-  Pending as PendingIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon
+  FiberNew as FiberNewIcon,
+  HourglassEmpty as HourglassEmptyIcon,
+  RateReview as RateReviewIcon,
+  Verified as VerifiedIcon,
+  Help as HelpIcon
 } from '@mui/icons-material';
 import { AgGridReact } from 'ag-grid-react';
-import { ColDef, GridReadyEvent, GridApi, ColumnApi } from 'ag-grid-community';
+import { ColDef, GridReadyEvent, GridApi } from 'ag-grid-community';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
 import { useParams } from 'react-router-dom';
-import { useAppSelector, useAppDispatch } from '@/hooks/redux';
+import { useAppSelector } from '@/hooks/redux';
 
 interface Segment {
   id: string;
@@ -67,44 +58,25 @@ interface Segment {
   updatedAt: string;
 }
 
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-}
-
-function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`translation-tabpanel-${index}`}
-      aria-labelledby={`translation-tab-${index}`}
-      {...other}
-    >
-      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
-    </div>
-  );
-}
 
 const TranslationInterfacePage: React.FC = () => {
   const { id: projectId } = useParams<{ id: string }>();
-  const { sidebarOpen } = useAppSelector((state) => state.ui);
-  const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
 
   const [segments, setSegments] = useState<Segment[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Stable search handler to prevent focus loss
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  }, []);
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [tabValue, setTabValue] = useState(0);
   const [selectedSegments, setSelectedSegments] = useState<Segment[]>([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
   const [stats, setStats] = useState<any>(null);
   const [gridApi, setGridApi] = useState<GridApi | null>(null);
-  const [columnApi, setColumnApi] = useState<ColumnApi | null>(null);
 
   // Load segments
   const loadSegments = useCallback(async () => {
@@ -330,12 +302,16 @@ const TranslationInterfacePage: React.FC = () => {
         const translator = params.data.translator;
         return translator ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {translator.avatarUrl && (
+            {translator.avatarUrl ? (
               <img
                 src={translator.avatarUrl}
                 alt={translator.name}
                 style={{ width: 24, height: 24, borderRadius: '50%' }}
               />
+            ) : (
+              <Avatar sx={{ width: 24, height: 24, fontSize: '12px', bgcolor: 'primary.main' }}>
+                {translator.name?.charAt(0)?.toUpperCase() || '?'}
+              </Avatar>
             )}
             <span style={{ 
               whiteSpace: 'nowrap',
@@ -364,10 +340,8 @@ const TranslationInterfacePage: React.FC = () => {
   const onGridReady = (params: GridReadyEvent) => {
     console.log('TranslationInterfacePage: AG-Grid ready');
     console.log('Grid API:', params.api);
-    console.log('Column API:', params.columnApi);
     console.log('Row Data at grid ready:', segments);
     setGridApi(params.api);
-    setColumnApi(params.columnApi);
     
     // Auto-size columns on grid ready
     setTimeout(() => {
@@ -440,24 +414,18 @@ const TranslationInterfacePage: React.FC = () => {
   };
 
   const getStatusIcon = (status: string) => {
+    const iconProps = { fontSize: 'small' as const };
+    
     switch (status) {
-      case 'approved': return <CheckIcon color="success" />;
-      case 'reviewed': return <CheckIcon color="info" />;
-      case 'translated': return <TranslateIcon color="primary" />;
-      case 'in_progress': return <EditIcon color="warning" />;
-      default: return <PendingIcon color="disabled" />;
+      case 'new': return <FiberNewIcon {...iconProps} color="success" />;
+      case 'in_progress': return <HourglassEmptyIcon {...iconProps} color="warning" />;
+      case 'translated': return <CheckIcon {...iconProps} color="info" />;
+      case 'reviewed': return <RateReviewIcon {...iconProps} color="secondary" />;
+      case 'approved': return <VerifiedIcon {...iconProps} color="success" />;
+      default: return <HelpIcon {...iconProps} />;
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'approved': return 'success';
-      case 'reviewed': return 'info';
-      case 'translated': return 'primary';
-      case 'in_progress': return 'warning';
-      default: return 'default';
-    }
-  };
 
   if (loading) {
     return (
@@ -481,30 +449,7 @@ const TranslationInterfacePage: React.FC = () => {
       margin: 0,
       padding: 0
     }}>
-      {/* Header */}
-      <Box sx={{ p: 3, pb: 0 }}>
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-          <Typography variant="h4" component="h1">
-            Translation Interface
-          </Typography>
-          <Box display="flex" gap={2}>
-            <Button
-              variant="outlined"
-              startIcon={<RefreshIcon />}
-              onClick={loadSegments}
-            >
-              Refresh
-            </Button>
-            <Button
-              variant="outlined"
-              startIcon={<DownloadIcon />}
-              disabled={segments.length === 0}
-            >
-              Export
-            </Button>
-          </Box>
-        </Box>
-      </Box>
+      {/* Header - Removed title, moved buttons to filters section */}
 
       {/* Statistics */}
       {stats && (
@@ -549,10 +494,11 @@ const TranslationInterfacePage: React.FC = () => {
           <Grid container spacing={2} alignItems="center">
             <Grid item xs={12} sm={6} md={4}>
               <TextField
+                key="search-field"
                 fullWidth
                 placeholder="Search segments..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={handleSearchChange}
                 InputProps={{
                   startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />
                 }}
@@ -576,7 +522,7 @@ const TranslationInterfacePage: React.FC = () => {
               </FormControl>
             </Grid>
             <Grid item xs={12} sm={12} md={5}>
-              <Box display="flex" gap={1} flexWrap="wrap">
+              <Box display="flex" gap={1} flexWrap="wrap" alignItems="center">
                 <Button
                   variant="outlined"
                   size="small"
@@ -601,6 +547,24 @@ const TranslationInterfacePage: React.FC = () => {
                 >
                   Mark as Approved
                 </Button>
+                <Box sx={{ ml: 'auto', display: 'flex', gap: 1 }}>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<RefreshIcon />}
+                    onClick={loadSegments}
+                  >
+                    Refresh
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<DownloadIcon />}
+                    disabled={segments.length === 0}
+                  >
+                    Export
+                  </Button>
+                </Box>
               </Box>
             </Grid>
           </Grid>
