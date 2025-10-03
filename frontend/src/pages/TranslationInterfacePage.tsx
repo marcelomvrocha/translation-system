@@ -43,7 +43,7 @@ import { ColDef, GridReadyEvent, GridApi, ColumnApi } from 'ag-grid-community';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
 import { useParams } from 'react-router-dom';
-import { useAppDispatch, useAppSelector } from '@/hooks/redux';
+import { useAppSelector, useAppDispatch } from '@/hooks/redux';
 
 interface Segment {
   id: string;
@@ -90,6 +90,7 @@ function TabPanel(props: TabPanelProps) {
 
 const TranslationInterfacePage: React.FC = () => {
   const { id: projectId } = useParams<{ id: string }>();
+  const { sidebarOpen } = useAppSelector((state) => state.ui);
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
 

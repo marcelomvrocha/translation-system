@@ -147,9 +147,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         sx={{
           flexGrow: 1,
           p: isTranslationInterface ? 0 : 3, // No padding for Translation Interface
-          width: { sm: `calc(100% - ${sidebarOpen ? DRAWER_WIDTH : 0}px)` },
+          width: isTranslationInterface ? '100vw' : { sm: `calc(100% - ${sidebarOpen ? DRAWER_WIDTH : 0}px)` },
           minHeight: '100vh',
           overflow: 'visible',
+          position: isTranslationInterface ? 'absolute' : 'relative',
+          top: isTranslationInterface ? 0 : 'auto',
+          left: isTranslationInterface ? 0 : 'auto',
+          right: isTranslationInterface ? 0 : 'auto',
+          zIndex: isTranslationInterface ? 1 : 'auto',
           transition: (theme) =>
             theme.transitions.create(['width', 'margin'], {
               easing: theme.transitions.easing.sharp,
